@@ -1,0 +1,22 @@
+# Entornos y archivos generados
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.env.*
+!.env.example
+*.log
+reporte_ia.txt
+reporte-riesgos-privacidad*.txt
+dist/
+.DS_Store
+# Configuración privada del entorno de trabajo
+.agents/
+.codex/
+.aws/
+# Documento con restricciones de reproducción: conservar solo localmente
+ISO_IEC_27701_2025.md

@@ -1,0 +1,472 @@
+Estoy desarrollando un proyecto universitario relacionado con un Sistema de Gestión de Información de Privacidad (PIMS) basado principalmente en ISO/IEC 27701.
+
+El trabajo se desarrolla en grupos de 4 integrantes y cada grupo tiene asignado un agente especializado.
+
+Actualmente, mi grupo trabaja con el:
+
+AGENTE DE EVALUACIÓN DE RIESGOS DE PRIVACIDAD
+
+La indicación principal del profesor para este primer avance es la siguiente:
+
+- De Prompt a Skill: transformación de una tarea en un proceso reutilizable.
+- Creación de Skill: activación, estructura y definición de pasos.
+- Construcción de asistente: definición de identidad, instrucciones y conocimiento.
+
+Resultado esperado:
+Skill funcional especializada.
+
+IMPORTANTE:
+Para este primer avance NO se busca todavía construir todo el PIMS multiagente completo ni integrar todos los agentes entre sí.
+
+Tampoco es necesario implementar todavía:
+- Orquestador general.
+- MCP completo.
+- Comunicación entre los 8 agentes.
+- Integración total con PostgreSQL.
+- Arquitectura multiagente completa.
+
+La prioridad actual es demostrar correctamente:
+
+Prompt → Asistente → Skill → Resultado funcional
+
+--------------------------------------------------
+1. OBJETIVO DEL AGENTE
+--------------------------------------------------
+
+El Agente de Evaluación de Riesgos de Privacidad debe analizar escenarios relacionados con el tratamiento de datos personales.
+
+Debe permitir identificar posibles riesgos, evaluar su probabilidad e impacto, calcular un nivel de riesgo y devolver recomendaciones de tratamiento.
+
+Ejemplo de entrada:
+
+"Una universidad almacena DNI, correos y fotografías de estudiantes sin control de acceso por roles."
+
+La respuesta debería contener información como:
+
+- Riesgo identificado.
+- Probabilidad.
+- Impacto.
+- Puntaje de riesgo.
+- Nivel de riesgo.
+- Justificación.
+- Recomendaciones.
+
+Ejemplo:
+
+Riesgo identificado:
+Acceso no autorizado.
+
+Probabilidad:
+Alta.
+
+Impacto:
+Alto.
+
+Nivel:
+Alto.
+
+Recomendaciones:
+- Implementar control de acceso basado en roles.
+- Registrar accesos.
+- Utilizar autenticación adecuada.
+- Aplicar cifrado cuando corresponda.
+- Revisar periódicamente los permisos.
+
+--------------------------------------------------
+2. TECNOLOGÍAS ACORDADAS
+--------------------------------------------------
+
+El profesor indicó o el equipo está considerando trabajar con:
+
+- Python.
+- Flask.
+- HTML.
+- CSS.
+- JavaScript puro (Vanilla JS).
+- FAISS, todavía por confirmar.
+- Modelo local de embeddings.
+
+Por ahora, el proyecto debe funcionar sin depender obligatoriamente de FAISS.
+
+La arquitectura debe quedar preparada para que posteriormente se pueda incorporar:
+
+- Embeddings.
+- RAG.
+- FAISS u otro vector store.
+- Base de conocimiento normativa.
+
+--------------------------------------------------
+3. ESTADO ACTUAL DEL PROYECTO
+--------------------------------------------------
+
+Actualmente existe un primer proyecto funcional con esta estructura aproximada:
+
+agente_riesgos_pims/
+│
+├── app.py
+├── requirements.txt
+├── PROMPT_SKILL.md
+├── README.md
+├── ejemplo_solicitud.json
+│
+├── skills/
+│   └── evaluacion_riesgo.py
+│
+├── templates/
+│   └── index.html
+│
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── app.js
+│
+├── rag/
+│   ├── embeddings.py
+│   └── faiss_store.py
+│
+├── knowledge/
+│   └── README.md
+│
+└── tests/
+    └── test_skill.py
+
+--------------------------------------------------
+4. FUNCIONAMIENTO ACTUAL
+--------------------------------------------------
+
+El flujo general es:
+
+Usuario
+↓
+Interfaz web HTML/CSS/JavaScript
+↓
+Flask
+↓
+Skill evaluar_riesgo()
+↓
+Evaluación de probabilidad e impacto
+↓
+Cálculo del puntaje
+↓
+Determinación del nivel
+↓
+Identificación básica de riesgos
+↓
+Generación de recomendaciones
+↓
+Respuesta mostrada en la interfaz
+
+La Skill principal se encuentra separada de Flask.
+
+Esto es intencional porque se busca demostrar que la Skill es un proceso reutilizable y no solamente código mezclado dentro de la interfaz.
+
+--------------------------------------------------
+5. ENTRADAS ACTUALES
+--------------------------------------------------
+
+Actualmente se espera trabajar con:
+
+- Descripción del tratamiento.
+- Probabilidad de 1 a 5.
+- Impacto de 1 a 5.
+- Categorías opcionales de datos personales.
+
+Ejemplos de categorías:
+
+- Identificación.
+- Contacto.
+- Financieros.
+- Salud.
+- Biométricos.
+- Académicos.
+
+--------------------------------------------------
+6. SALIDAS ACTUALES
+--------------------------------------------------
+
+La Skill devuelve aproximadamente:
+
+- Nombre del agente.
+- Nombre de la Skill.
+- Descripción recibida.
+- Probabilidad.
+- Impacto.
+- Puntaje.
+- Nivel.
+- Categorías involucradas.
+- Riesgos identificados.
+- Justificación.
+- Recomendaciones.
+- Estado de integración futura con RAG.
+
+--------------------------------------------------
+7. LÓGICA DEL NIVEL DE RIESGO
+--------------------------------------------------
+
+Actualmente se utiliza una matriz sencilla:
+
+Puntaje = Probabilidad × Impacto
+
+Ambos valores van de 1 a 5.
+
+Rangos actuales:
+
+- 1 a 5: Bajo.
+- 6 a 11: Medio.
+- 12 a 19: Alto.
+- 20 a 25: Crítico.
+
+Esta lógica puede revisarse si existe una alternativa más coherente para una demostración académica de riesgos de privacidad.
+
+No quiero que se vuelva innecesariamente compleja.
+
+--------------------------------------------------
+8. DETECCIÓN DE RIESGOS
+--------------------------------------------------
+
+Actualmente se usan reglas simples basadas en palabras clave para detectar situaciones como:
+
+- Acceso no autorizado.
+- Exposición de datos personales.
+- Pérdida de información.
+- Transferencia insegura.
+- Retención excesiva.
+- Riesgo general.
+
+Ejemplos de palabras o frases:
+
+- "sin control de acceso".
+- "credenciales compartidas".
+- "sin autenticación".
+- "sin cifrado".
+- "enlace público".
+- "sin copia de seguridad".
+- "sin plazo".
+- "nunca se elimina".
+
+Esto corresponde únicamente al primer avance.
+
+Posteriormente, la intención es reemplazar o complementar esta lógica con un modelo local, embeddings y RAG.
+
+--------------------------------------------------
+9. RAG Y FAISS
+--------------------------------------------------
+
+Actualmente RAG NO está implementado completamente.
+
+Existen módulos preparados para:
+
+- embeddings.py
+- faiss_store.py
+
+Pero intencionalmente pueden lanzar NotImplementedError o permanecer como estructura base.
+
+FAISS todavía está por confirmar con el profesor.
+
+NO asumir que FAISS es obligatorio.
+
+La futura idea sería:
+
+Documentos normativos
+↓
+Procesamiento
+↓
+Embeddings
+↓
+Vector Store
+↓
+Recuperación
+↓
+Contexto normativo
+↓
+Agente de Riesgos
+
+--------------------------------------------------
+10. BASE DE CONOCIMIENTO
+--------------------------------------------------
+
+Posteriormente se contempla utilizar:
+
+- ISO/IEC 27701.
+- Normativa peruana de protección de datos personales.
+- Reglamento correspondiente.
+- Matrices de evaluación de riesgos.
+- Casos de prueba.
+- Documentos definidos por el equipo.
+
+En este primer avance, no es obligatorio implementar toda la recuperación normativa.
+
+--------------------------------------------------
+11. CONSTRUCCIÓN DEL ASISTENTE
+--------------------------------------------------
+
+La identidad propuesta es:
+
+"Eres un asistente especializado en evaluación de riesgos de privacidad dentro de un Sistema de Gestión de Información de Privacidad (PIMS)."
+
+Objetivo:
+
+Analizar actividades o escenarios relacionados con tratamiento de datos personales y producir una evaluación de riesgo comprensible, estructurada y reutilizable.
+
+Activación:
+
+La Skill se activa cuando el usuario proporciona una descripción de una actividad, proceso o situación de tratamiento de datos y solicita evaluar sus riesgos.
+
+Pasos esperados:
+
+1. Leer la descripción.
+2. Identificar indicios de riesgo.
+3. Registrar probabilidad.
+4. Registrar impacto.
+5. Calcular el puntaje.
+6. Determinar el nivel.
+7. Generar justificación.
+8. Proponer medidas.
+
+--------------------------------------------------
+12. QUÉ NECESITO QUE REVISES
+--------------------------------------------------
+
+Quiero que revises TODO el proyecto y confirmes si realmente cumple con la indicación académica:
+
+Prompt → Skill → Construcción de asistente → Skill funcional especializada.
+
+Necesito que revises especialmente:
+
+1. Si la estructura de carpetas es adecuada.
+2. Si app.py está correctamente separado de la Skill.
+3. Si evaluacion_riesgo.py está bien diseñado como Skill reutilizable.
+4. Si la lógica de riesgo tiene sentido.
+5. Si las entradas y salidas están bien definidas.
+6. Si Flask está bien implementado.
+7. Si la API está correctamente organizada.
+8. Si HTML, CSS y JavaScript están correctamente conectados.
+9. Si existen errores de ejecución.
+10. Si existen errores de importación.
+11. Si existen rutas incorrectas.
+12. Si requirements.txt contiene lo necesario.
+13. Si los tests realmente funcionan.
+14. Si los módulos preparados para embeddings y FAISS están correctamente aislados.
+15. Si existe código innecesario.
+16. Si falta algún archivo importante.
+17. Si la Skill realmente puede considerarse funcional.
+18. Si el proyecto es suficientemente claro para una exposición universitaria.
+19. Si el código se puede simplificar sin perder funcionalidad.
+20. Si alguna parte está demasiado avanzada para este primer avance.
+21. Si alguna parte parece incompleta respecto a la indicación del profesor.
+
+--------------------------------------------------
+13. FORMA EN QUE QUIERO LA REVISIÓN
+--------------------------------------------------
+
+No quiero que cambies todo inmediatamente.
+
+Primero quiero un diagnóstico.
+
+Devuélveme una revisión con este formato:
+
+A. Estado general del proyecto.
+
+B. Qué está correctamente implementado.
+
+C. Qué errores encontraste.
+
+D. Qué cosas deben corregirse obligatoriamente.
+
+E. Qué mejoras son opcionales.
+
+F. Qué cosas NO necesitamos implementar todavía.
+
+G. Si cumple o no con:
+- De Prompt a Skill.
+- Creación de Skill.
+- Construcción de asistente.
+- Skill funcional especializada.
+
+H. Lista exacta de archivos que recomiendas modificar.
+
+I. En caso de encontrar errores de código, indica:
+- archivo;
+- problema;
+- línea o sección aproximada;
+- solución recomendada.
+
+J. Finalmente, dame una conclusión sobre si el proyecto está listo para ser presentado como primer avance.
+
+--------------------------------------------------
+14. RESTRICCIONES IMPORTANTES
+--------------------------------------------------
+
+Mantén el proyecto sencillo.
+
+Es un proyecto universitario.
+
+No quiero una arquitectura empresarial innecesariamente compleja.
+
+No introducir todavía, salvo que sea indispensable:
+
+- LangGraph.
+- CrewAI.
+- AutoGen.
+- Redis.
+- Docker.
+- Kubernetes.
+- microservicios.
+- orquestadores complejos.
+- autenticación empresarial.
+- bases de datos distribuidas.
+
+Tampoco quiero reemplazar Flask por otro framework.
+
+Mantener:
+
+Python + Flask + HTML + CSS + Vanilla JavaScript.
+
+El código debe ser entendible para estudiantes.
+
+Evitar sobreingeniería.
+
+--------------------------------------------------
+15. CONTEXTO DEL EQUIPO
+--------------------------------------------------
+
+Somos 4 integrantes.
+
+La división del trabajo planteada es:
+
+Integrante 1:
+Prompt → Skill, definición del agente, identidad e instrucciones.
+
+Integrante 2:
+Lógica de evaluación de riesgos en Python.
+
+Integrante 3:
+Flask, HTML, CSS y JavaScript.
+
+Integrante 4:
+Base de conocimiento, casos de prueba, documentación y preparación futura de RAG.
+
+Existe otro grupo, correspondiente al Agente 8, que aparentemente ya tiene un avance importante.
+
+Posteriormente se buscará mantener compatibilidad entre los agentes, pero para este primer avance NO necesitamos conectarnos todavía con el Agente 8.
+
+--------------------------------------------------
+16. OBJETIVO FINAL DE ESTA REVISIÓN
+--------------------------------------------------
+
+Quiero tener una primera versión estable y presentable del Agente de Evaluación de Riesgos.
+
+Después de corregirlo, se realizará un informe universitario basado exactamente en lo que realmente esté implementado.
+
+Por eso:
+
+NO inventes funcionalidades que no estén en el código.
+
+NO digas que RAG funciona si todavía no funciona.
+
+NO digas que FAISS está implementado si solamente está preparado.
+
+NO digas que existe integración multiagente si todavía no existe.
+
+Revisa el proyecto tal como está actualmente y ayúdame a dejarlo correcto para este primer avance.

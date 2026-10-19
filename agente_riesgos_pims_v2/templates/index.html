@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Evaluación de Riesgos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="contenedor">
+        <section class="cabecera">
+            <p class="etiqueta">PIMS · Agente especializado</p>
+            <h1>Agente de Evaluación de Riesgos</h1>
+            <p>
+                Analiza un escenario de tratamiento de datos personales,
+                calcula su nivel de riesgo y propone medidas de tratamiento.
+                Compara tu valoración con la opinión de Ollama y revisa indicadores y posibles brechas de privacidad.
+            </p>
+        </section>
+
+        <section class="panel" aria-label="Estado de Ollama">
+            <p id="estado-ollama" role="status">Comprobando Ollama…</p>
+            <label for="modelo">Modelo local para el reporte</label>
+            <select id="modelo"><option value="">Modelo configurado en el servidor</option></select>
+            <p class="nota">Puedes elegir otro modelo instalado. Si la IA falla, se mostrará el motivo para que puedas reintentar.</p>
+            <button id="comprobar-ollama" type="button">Comprobar conexión</button>
+        </section>
+        <section class="panel">
+            <form id="formRiesgo">
+                <label for="descripcion">Descripción del tratamiento</label>
+                <textarea
+                    id="descripcion"
+                    placeholder="Ejemplo: La universidad almacena DNI, correos y fotografías sin control de acceso por roles."
+                    required></textarea>
+
+                <div class="fila">
+                    <div>
+                        <label for="probabilidad">Probabilidad</label>
+                        <select id="probabilidad">
+                            <option value="1">1 - Muy baja</option>
+                            <option value="2">2 - Baja</option>
+                            <option value="3" selected>3 - Media</option>
+                            <option value="4">4 - Alta</option>
+                            <option value="5">5 - Muy alta</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="impacto">Impacto</label>
+                        <select id="impacto">
+                            <option value="1">1 - Muy bajo</option>
+                            <option value="2">2 - Bajo</option>
+                            <option value="3">3 - Medio</option>
+                            <option value="4" selected>4 - Alto</option>
+                            <option value="5">5 - Muy alto</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="campo-rol">
+                    <label for="rol_privacidad">Rol de la organización en este tratamiento</label>
+                    <select id="rol_privacidad">
+                        <option value="no_definido">Por confirmar</option>
+                        <option value="responsable">Responsable: decide finalidad y medios</option>
+                        <option value="encargado">Encargado: trata datos por cuenta de otro</option>
+                        <option value="ambos">Ambos roles</option>
+                    </select>
+                    <p class="nota">Incluye controles existentes, exposición, volumen y daños posibles en la descripción para obtener una opinión más precisa.</p>
+                </div>
+                <fieldset>
+                    <legend>Categorías de datos involucrados</legend>
+                    <label class="check"><input type="checkbox" value="Identificación"> Identificación</label>
+                    <label class="check"><input type="checkbox" value="Contacto"> Contacto</label>
+                    <label class="check"><input type="checkbox" value="Financieros"> Financieros</label>
+                    <label class="check"><input type="checkbox" value="Salud"> Salud</label>
+                    <label class="check"><input type="checkbox" value="Biométricos"> Biométricos</label>
+                    <label class="check"><input type="checkbox" value="Académicos"> Académicos</label>
+                </fieldset>
+
+                <button type="submit">Evaluar riesgo</button>
+                <p id="progreso-analisis" role="status" class="nota"></p>
+            </form>
+        </section>
+
+        <section id="resultado" class="panel resultado oculto">
+            <div class="resultado-superior">
+                <div>
+                    <p class="etiqueta">Tu valoración · matriz del proyecto</p>
+                    <h2 id="nivel"></h2>
+                </div>
+                <div id="puntaje" class="puntaje"></div>
+            </div>
+
+            <p id="modo" class="nota" aria-live="polite"></p>
+            <p id="mensaje" class="nota"></p>
+            <p id="fuente-documental" class="nota"></p>
+
+            <section class="opinion" aria-labelledby="titulo-opinion">
+                <h3 id="titulo-opinion">Segunda opinión de Ollama</h3>
+                <p id="valoracion-ia"></p>
+                <p id="comparacion-ia"></p>
+                <ul id="motivos-ia"></ul>
+                <p id="confianza-ia"></p>
+                <h4>Información que falta</h4>
+                <ul id="datos-faltantes"></ul>
+            </section>
+            <h3>Riesgos identificados</h3>
+            <div id="riesgos"></div>
+
+            <h3>Justificación</h3>
+            <p id="justificacion"></p>
+
+            <h3>Posibles consecuencias</h3>
+            <ul id="consecuencias"></ul>
+
+            <h3>Indicadores específicos de riesgo</h3>
+            <p class="nota">Propuestas para seguimiento. Los umbrales deben acordarse con el equipo; los valores actuales requieren medición.</p>
+            <div id="indicadores"></div>
+
+            <h3>Posibles controles afectados · ISO/IEC 27701:2025</h3>
+            <p class="nota">Anexo A: controles de referencia. Anexo B: guía de implementación. Catálogo parcial; cada relación requiere verificar evidencia y aplicabilidad.</p>
+            <div id="referencias-iso"></div>
+            <ul id="avisos-revision" class="nota"></ul>
+
+            <h3>Ley 29733 · artículos relacionados con los riesgos</h3>
+            <p id="fuente-legal" class="nota"></p>
+            <div id="referencias-ley"></div>
+
+            <h3>Medidas recomendadas</h3>
+            <ul id="recomendaciones"></ul>
+
+        </section>
+
+        <button id="exportar-reporte" type="button" disabled>Descargar reporte (.txt)</button>
+
+        <section id="error" class="error oculto" role="alert"></section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
