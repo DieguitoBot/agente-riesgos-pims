@@ -1,1 +1,0 @@
-Coloca aquí documentos públicos autorizados, PDF con texto, TXT o MD. No subas documentos ISO sujetos a licencia ni datos personales. Ejecuta python -m rag.indexar desde agente_riesgos_pims_v2. Los PDF escaneados requieren OCR previo.
