@@ -22,6 +22,8 @@ function llenarLista(id, elementos) {
 form.addEventListener("submit", async (evento) => {
     evento.preventDefault();
 
+    reiniciarResumen();
+    cambiarPestana("evaluacion");
     ultimoResultado = null;
     document.getElementById("exportar-reporte").disabled = true;
     resultado.classList.add("oculto");
@@ -93,9 +95,12 @@ form.addEventListener("submit", async (evento) => {
         document.getElementById("fuente-documental").textContent = doc
             ? `Documento ISO: ${doc.estado}. Secciones recuperadas: ${doc.secciones.map(s => s.seccion).join(", ") || "ninguna"}. ${doc.mensaje}` : "";
         resultado.classList.remove("oculto");
-        resultado.scrollIntoView({ behavior: "smooth", block: "start" });
+        actualizarResumen(contenido);
+        cambiarPestana("resultados", true);
 
     } catch (error) {
+        document.getElementById("resumen-estado").textContent = "Sin resultado";
+        cambiarPestana("evaluacion", true);
         errorBox.textContent = error.message;
         errorBox.classList.remove("oculto");
     } finally {
@@ -127,6 +132,13 @@ function mostrarTarjetas(id, elementos, vacio, renderizar) {
 }
 
 function mostrarComplemento(contenido) {
+    document.getElementById("estado-rag").textContent = contenido.estado_rag || "Estado de recuperación no informado.";
+    mostrarTarjetas("fuentes-rag", contenido.fuentes_rag || [],
+        "Esta evaluación no incluye fuentes recuperadas por RAG.", (tarjeta, fuente) => {
+            parrafo(tarjeta, fuente.archivo || "Documento sin nombre");
+            parrafo(tarjeta, `Página: ${fuente.pagina ?? "No indicada"} · Fragmento: ${fuente.fragmento ?? "No indicado"}`);
+        });
+
     const ia = contenido.valoracion_ia;
     const valorada = ia && ia.puntaje !== null;
     document.getElementById("valoracion-ia").textContent = valorada
@@ -208,6 +220,9 @@ async function comprobarOllama() {
     const boton = document.getElementById("comprobar-ollama");
     boton.disabled = true;
     estado.textContent = "Comprobando conexión con Ollama…";
+    const resumenServicio = document.getElementById("servicio-resumen");
+    resumenServicio.textContent = "Comprobando servicio…";
+    resumenServicio.dataset.estado = "pendiente";
     try {
         const respuesta = await fetch("/api/status");
         if (!respuesta.ok) throw new Error(`El servidor respondió HTTP ${respuesta.status}.`);
@@ -224,6 +239,8 @@ async function comprobarOllama() {
         });
         selector.value = modelos.includes(seleccionado) ? seleccionado : datos.modelo;
         estado.textContent = `${datos.mensaje} Modelo configurado: ${datos.modelo}.`;
+        resumenServicio.textContent = datos.ollama ? "● Ollama disponible" : "● Revisar Ollama";
+        resumenServicio.dataset.estado = datos.ollama ? "activo" : "error";
         if (datos.ollama) {
             estado.textContent += ` Tiempo de espera: ${datos.timeout_segundos || "según configuración"} segundos. Servicio disponible; la generación se comprueba al evaluar.`;
         } else if (datos.servicio_disponible) {
@@ -231,9 +248,104 @@ async function comprobarOllama() {
         }
     } catch (error) {
         estado.textContent = `No se pudo comprobar el estado: ${error.message}`;
+        resumenServicio.textContent = "● Servicio sin verificar";
+        resumenServicio.dataset.estado = "error";
     } finally {
         boton.disabled = false;
     }
 }
 document.getElementById("comprobar-ollama").addEventListener("click", comprobarOllama);
 comprobarOllama();
+
+
+// Navegación accesible con teclado y paneles independientes.
+function cambiarPestana(nombre, enfocar = false) {
+    document.querySelectorAll('[role="tab"]').forEach(tab => {
+        const activo = tab.id === `tab-${nombre}`;
+        tab.setAttribute("aria-selected", String(activo));
+        tab.tabIndex = activo ? 0 : -1;
+        document.getElementById(tab.getAttribute("aria-controls")).hidden = !activo;
+        if (activo && enfocar) tab.focus();
+    });
+}
+const pestanas = [...document.querySelectorAll('[role="tab"]')];
+pestanas.forEach((tab, indice) => {
+    tab.addEventListener("click", () => cambiarPestana(tab.id.replace("tab-", "")));
+    tab.addEventListener("keydown", evento => {
+        let siguiente;
+        if (evento.key === "ArrowRight") siguiente = (indice + 1) % pestanas.length;
+        if (evento.key === "ArrowLeft") siguiente = (indice + pestanas.length - 1) % pestanas.length;
+        if (evento.key === "Home") siguiente = 0;
+        if (evento.key === "End") siguiente = pestanas.length - 1;
+        if (siguiente === undefined) return;
+        evento.preventDefault();
+        cambiarPestana(pestanas[siguiente].id.replace("tab-", ""), true);
+    });
+});
+document.querySelectorAll("[data-ir-evaluacion]").forEach(boton => {
+    boton.addEventListener("click", () => {
+        cambiarPestana("evaluacion");
+        document.getElementById("descripcion").focus();
+    });
+});
+
+function reiniciarResumen() {
+    document.getElementById("resumen-estado").textContent = "Analizando…";
+    document.getElementById("resumen-nivel").textContent = "—";
+    document.getElementById("resumen-puntaje").textContent = "Matriz: probabilidad × impacto";
+    document.getElementById("resumen-riesgos").textContent = "—";
+    document.getElementById("resumen-medidas").textContent = "—";
+    document.getElementById("vacio-resultados").hidden = false;
+    document.getElementById("vacio-medidas").hidden = false;
+    document.getElementById("contenido-medidas").classList.add("oculto");
+}
+
+function actualizarResumen(contenido) {
+    document.getElementById("resumen-estado").textContent = "Completado";
+    document.getElementById("resumen-nivel").textContent = contenido.nivel;
+    document.getElementById("resumen-puntaje").textContent = `${contenido.puntaje} de 25 · Tu valoración`;
+    document.getElementById("resumen-riesgos").textContent = contenido.analisis_ia.riesgos_identificados.length;
+    document.getElementById("resumen-medidas").textContent = contenido.recomendaciones.length;
+    document.getElementById("vacio-resultados").hidden = true;
+    document.getElementById("vacio-medidas").hidden = true;
+    document.getElementById("contenido-medidas").classList.remove("oculto");
+    document.getElementById("buscar-tratamiento").value = "";
+    mostrarTratamiento();
+}
+
+function mostrarTratamiento() {
+    const riesgos = ultimoResultado?.analisis_ia?.riesgos_identificados || [];
+    const consulta = document.getElementById("buscar-tratamiento").value.trim().toLocaleLowerCase("es");
+    const cuerpo = document.getElementById("medidas-por-riesgo");
+    cuerpo.replaceChildren();
+    let visibles = 0;
+    riesgos.forEach((item, indice) => {
+        const codigo = `R-${String(indice + 1).padStart(2, "0")}`;
+        if (![codigo, item.riesgo, item.medida_concreta, item.prioridad]
+            .some(valor => String(valor || "").toLocaleLowerCase("es").includes(consulta))) return;
+        visibles++;
+        const fila = document.createElement("tr");
+        const valores = [codigo, item.riesgo, item.prioridad || "Por definir",
+            item.medida_concreta || "Pendiente de definir",
+            item.verificacion || "Pendiente de definir",
+            item.medida_concreta ? "Propuesta · por revisar" : "Sin propuesta específica",
+            "Pendiente de reevaluación"];
+        valores.forEach(valor => {
+            const celda = document.createElement("td");
+            celda.textContent = valor;
+            fila.appendChild(celda);
+        });
+        cuerpo.appendChild(fila);
+    });
+    if (!visibles) {
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+        celda.colSpan = 7;
+        celda.textContent = riesgos.length ? "No hay propuestas que coincidan con la búsqueda."
+            : "No se identificaron riesgos para desglosar. Revisa las recomendaciones generales.";
+        fila.appendChild(celda);
+        cuerpo.appendChild(fila);
+    }
+    document.getElementById("tratamiento-conteo").textContent = `Mostrando ${visibles} de ${riesgos.length} riesgos.`;
+}
+document.getElementById("buscar-tratamiento").addEventListener("input", mostrarTratamiento);

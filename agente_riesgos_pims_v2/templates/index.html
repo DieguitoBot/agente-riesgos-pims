@@ -4,28 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente de Evaluación de Riesgos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=versiones['css/style.css']) }}">
 </head>
 <body>
+    <header class="barra-superior">
+        <a class="marca" href="/" aria-label="PIMS · Inicio"><span class="marca-icono">P</span> PIMS <span class="separador">/</span> <span>Riesgos de privacidad</span></a>
+        <span id="servicio-resumen" class="estado-servicio" role="status">Comprobando servicio…</span>
+    </header>
     <main class="contenedor">
         <section class="cabecera">
-            <p class="etiqueta">PIMS · Agente especializado</p>
-            <h1>Agente de Evaluación de Riesgos</h1>
-            <p>
-                Analiza un escenario de tratamiento de datos personales,
-                calcula su nivel de riesgo y propone medidas de tratamiento.
-                Compara tu valoración con la opinión de Ollama y revisa indicadores y posibles brechas de privacidad.
-            </p>
+            <div>
+                <p class="etiqueta">Agente especializado · Evaluación inicial</p>
+                <h1>Riesgos de privacidad</h1>
+                <p>Evalúa un tratamiento de datos personales y revisa sus riesgos y medidas propuestas.</p>
+            </div>
+            <button id="exportar-reporte" class="boton-secundario" type="button" disabled>↓ Descargar reporte (.txt)</button>
         </section>
 
-        <section class="panel" aria-label="Estado de Ollama">
+        <section class="resumen" aria-label="Resumen de la evaluación actual" aria-live="polite">
+            <article class="indicador"><p>Estado del análisis</p><strong id="resumen-estado">Sin evaluar</strong><small>Evaluación actual</small></article>
+            <article class="indicador azul"><p>Tu nivel de riesgo</p><strong id="resumen-nivel">—</strong><small id="resumen-puntaje">Matriz: probabilidad × impacto</small></article>
+            <article class="indicador violeta"><p>Riesgos identificados</p><strong id="resumen-riesgos">—</strong><small>Según el análisis generado</small></article>
+            <article class="indicador verde"><p>Medidas recomendadas</p><strong id="resumen-medidas">—</strong><small>Propuestas para revisión</small></article>
+        </section>
+        <p class="nota alcance">Resumen de la evaluación actual. Los resultados no se guardan al recargar la página.</p>
+
+        <div class="pestanas" role="tablist" aria-label="Secciones de la evaluación">
+            <button id="tab-evaluacion" type="button" role="tab" aria-selected="true" aria-controls="vista-evaluacion" tabindex="0">01 · Evaluación</button>
+            <button id="tab-resultados" type="button" role="tab" aria-selected="false" aria-controls="vista-resultados" tabindex="-1">02 · Resultados</button>
+            <button id="tab-medidas" type="button" role="tab" aria-selected="false" aria-controls="vista-medidas" tabindex="-1">03 · Tratamiento de riesgos</button>
+        </div>
+        <section id="vista-evaluacion" role="tabpanel" aria-labelledby="tab-evaluacion">
+        <div class="evaluacion-layout">
+        <aside class="panel conexion" aria-label="Estado de Ollama">
+            <p class="etiqueta">Asistente local</p>
+            <h2>Motor de análisis</h2>
+
             <p id="estado-ollama" role="status">Comprobando Ollama…</p>
             <label for="modelo">Modelo local para el reporte</label>
             <select id="modelo"><option value="">Modelo configurado en el servidor</option></select>
             <p class="nota">Puedes elegir otro modelo instalado. Si la IA falla, se mostrará el motivo para que puedas reintentar.</p>
             <button id="comprobar-ollama" type="button">Comprobar conexión</button>
-        </section>
+        </aside>
         <section class="panel">
+            <div class="titulo-panel"><h2>Describe el escenario</h2><p>Incluye la finalidad, los datos tratados y los controles existentes.</p></div>
             <form id="formRiesgo">
                 <label for="descripcion">Descripción del tratamiento</label>
                 <textarea
@@ -82,6 +104,16 @@
             </form>
         </section>
 
+        </div>
+        </section>
+
+        <section id="vista-resultados" role="tabpanel" aria-labelledby="tab-resultados" hidden>
+            <div id="vacio-resultados" class="panel estado-vacio">
+                <span class="vacio-icono" aria-hidden="true">◎</span>
+                <h2>Tu análisis aparecerá aquí</h2>
+                <p>Completa el escenario en Evaluación para revisar el nivel, los riesgos y el sustento documental.</p>
+                <button type="button" data-ir-evaluacion>Ir a evaluación</button>
+            </div>
         <section id="resultado" class="panel resultado oculto">
             <div class="resultado-superior">
                 <div>
@@ -122,20 +154,46 @@
             <div id="referencias-iso"></div>
             <ul id="avisos-revision" class="nota"></ul>
 
+            <h3>Fuentes documentales recuperadas · RAG</h3>
+            <p id="estado-rag" class="nota"></p>
+            <p class="nota">La recuperación por similitud aporta contexto; no acredita por sí sola que una fuente sustente un riesgo o una medida.</p>
+            <div id="fuentes-rag"></div>
+
             <h3>Ley 29733 · artículos relacionados con los riesgos</h3>
             <p id="fuente-legal" class="nota"></p>
             <div id="referencias-ley"></div>
 
-            <h3>Medidas recomendadas</h3>
-            <ul id="recomendaciones"></ul>
-
+        </section>
         </section>
 
-        <button id="exportar-reporte" type="button" disabled>Descargar reporte (.txt)</button>
+        <section id="vista-medidas" role="tabpanel" aria-labelledby="tab-medidas" hidden>
+            <div id="vacio-medidas" class="panel estado-vacio">
+                <span class="vacio-icono" aria-hidden="true">✓</span>
+                <h2>Primero, evalúa un escenario</h2>
+                <p>Las medidas propuestas se mostrarán cuando termine el análisis.</p>
+                <button type="button" data-ir-evaluacion>Ir a evaluación</button>
+            </div>
+            <section id="contenido-medidas" class="panel oculto">
+                <div class="titulo-panel"><h2>Tratamiento de riesgos · propuestas</h2><p>Revisa su aplicabilidad antes de implementarlas. Estas propuestas no representan controles ejecutados.</p></div>
+                <p class="aviso-tratamiento">Plan inicial para revisión humana. El nivel calculado corresponde al escenario completo; cada riesgo requiere valoración individual antes de medir su reducción.</p>
+                <label for="buscar-tratamiento">Buscar riesgo, medida o prioridad</label>
+                <input id="buscar-tratamiento" type="search" placeholder="Buscar en las propuestas…">
+                <div class="tabla-contenedor" role="region" aria-label="Propuestas de tratamiento por riesgo" tabindex="0">
+                    <table class="tabla-tratamiento">
+                        <caption>Propuestas de la evaluación actual · sin seguimiento persistente</caption>
+                        <thead><tr><th scope="col">Código</th><th scope="col">Riesgo</th><th scope="col">Prioridad propuesta</th><th scope="col">Control propuesto</th><th scope="col">Verificación</th><th scope="col">Estado</th><th scope="col">Riesgo residual</th></tr></thead>
+                        <tbody id="medidas-por-riesgo"></tbody>
+                    </table>
+                </div>
+                <p id="tratamiento-conteo" class="nota" role="status"></p>
+                <h3>Recomendaciones generales</h3>
+                <ul id="recomendaciones" class="lista-medidas"></ul>
+            </section>
+        </section>
 
         <section id="error" class="error oculto" role="alert"></section>
     </main>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js', v=versiones['js/app.js']) }}"></script>
 </body>
 </html>
