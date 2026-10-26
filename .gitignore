@@ -20,3 +20,6 @@ dist/
 .aws/
 # Documento con restricciones de reproducción: conservar solo localmente
 ISO_IEC_27701_2025.md
+
+# Índices vectoriales generados en cada equipo
+agente_riesgos_pims_v2/rag/indice_local/
