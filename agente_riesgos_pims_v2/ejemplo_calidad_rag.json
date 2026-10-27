@@ -1,0 +1,7 @@
+{
+  "descripcion": "Una universidad guarda DNI, correos y notas de estudiantes en una hoja de cálculo. El enlace permite lectura a cualquier persona sin iniciar sesión. Tres administrativos editan la hoja usando una misma cuenta compartida. Se realiza una copia diaria en una carpeta restringida. Los registros de egresados se conservan indefinidamente, sin plazo de conservación definido. No se ha confirmado ninguna filtración.",
+  "probabilidad": 4,
+  "impacto": 4,
+  "categorias": ["Identificación", "Contacto", "Académicos"],
+  "rol_privacidad": "responsable"
+}

@@ -8,16 +8,18 @@ from llm.ollama_client import OllamaError, validar_analisis
 from prompts.riesgo_prompt import construir_mensajes
 from skills.evaluacion_riesgo import evaluar_riesgo
 from tests.test_ollama_client import ANALISIS
+from tests.iso_fixture import instalar_iso_sintetico, ACCESO, RETENCION
 
 
 class TestComplementos(unittest.TestCase):
     def setUp(self):
+        instalar_iso_sintetico(self)
         self.analisis = copy.deepcopy(ANALISIS)
         self.descripcion = 'La universidad almacena DNI sin control de acceso y sin plazo de conservación.'
         self.referencia = dict(riesgo='Acceso no autorizado', control='A.3.9',
             evidencia='sin control de acceso', motivo='Posible acceso por personas sin autorización.',
             evidencia_requerida='Matriz de permisos y revisión de cuentas.',
-            cita_normativa='Each profile comprises')
+            cita_normativa=ACCESO)
         self.analisis['referencias_iso'] = [self.referencia]
         self.analisis['indicadores_riesgo'] = [dict(riesgo='Acceso no autorizado',
             indicador='Cuentas con permisos excesivos', formula='Cuentas excesivas / cuentas revisadas × 100',
@@ -56,7 +58,7 @@ class TestComplementos(unittest.TestCase):
 
     def test_rol_filtra_controles_especificos(self):
         self.referencia['control'] = 'A.1.4.8'
-        self.referencia['cita_normativa'] = 'The organization should not retain Pil for longer than is necessary'
+        self.referencia['cita_normativa'] = RETENCION
         self.assertEqual(self.evaluar('encargado')['referencias_iso'], [])
         self.assertTrue(self.evaluar('responsable')['referencias_iso'])
         self.assertEqual(self.evaluar('no_definido')['referencias_iso'][0]['aplicabilidad'],

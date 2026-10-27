@@ -39,7 +39,7 @@ class TestOllamaClient(unittest.TestCase):
         self.response.json.return_value = {"message": {"content": json.dumps(ANALISIS)}, "done": True}
 
     def test_chat_json_y_contexto(self):
-        resultado = analizar_con_ollama({"descripcion": "Escenario", "puntaje": 16, "nivel": "Alto", "categorias": ["Salud"]})
+        resultado = analizar_con_ollama({"descripcion": "Datos sin control de acceso", "puntaje": 16, "nivel": "Alto", "categorias": ["Salud"]})
         self.assertEqual(resultado, ANALISIS)
         args, kwargs = self.session.request.call_args
         self.assertEqual(args, ("POST", "http://127.0.0.1:11434/api/chat"))
@@ -126,5 +126,5 @@ class TestOllamaClient(unittest.TestCase):
     def test_modelo_configurable(self):
         with patch.dict("os.environ", {"OLLAMA_MODEL": "otro:3b"}):
             self.assertEqual(obtener_configuracion()["modelo"], "otro:3b")
-            analizar_con_ollama({})
+            analizar_con_ollama({"descripcion": "Datos sin control de acceso"})
             self.assertEqual(self.session.request.call_args.kwargs["json"]["model"], "otro:3b")

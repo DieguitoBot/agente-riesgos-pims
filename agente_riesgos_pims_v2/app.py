@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request, jsonify, Response
+from hashlib import sha256
+from pathlib import Path
+
+from flask import Flask, render_template, request, jsonify, Response, make_response
 from knowledge.documento_iso import leer_secciones
 from knowledge.documento_ley import leer_articulos, AVISO
 from knowledge.controles_iso import CONTROLES
@@ -6,11 +9,19 @@ from llm.ollama_client import consultar_estado
 from skills.evaluacion_riesgo import evaluar_riesgo
 
 app = Flask(__name__)
+# El lanzador local no usa debug: recargar HTML editado sin retener plantillas antiguas.
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 @app.route("/")
 def inicio():
-    return render_template("index.html")
+    versiones = {
+        nombre: sha256((Path(app.static_folder) / nombre).read_bytes()).hexdigest()[:16]
+        for nombre in ('css/style.css', 'js/app.js')
+    }
+    respuesta = make_response(render_template("index.html", versiones=versiones))
+    respuesta.cache_control.no_store = True
+    return respuesta
 
 
 @app.route("/api/status")

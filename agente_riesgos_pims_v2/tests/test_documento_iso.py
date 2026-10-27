@@ -5,9 +5,13 @@ from app import app
 from knowledge.documento_iso import leer_secciones, recuperar_contexto
 from prompts.riesgo_prompt import construir_mensajes
 from tests import test_complementos
+from tests.iso_fixture import instalar_iso_sintetico
 
 
 class TestDocumentoISO(unittest.TestCase):
+    def setUp(self):
+        instalar_iso_sintetico(self)
+
     def test_ocr_secciones_y_trazabilidad(self):
         secciones, huella = leer_secciones()
         self.assertEqual(len(huella), 64)
@@ -41,6 +45,7 @@ class TestDocumentoISO(unittest.TestCase):
     def test_cita_inventada_descartada_aunque_codigo_exista(self):
         caso = test_complementos.TestComplementos()
         caso.setUp()
+        self.addCleanup(caso.doCleanups)
         caso.referencia['cita_normativa'] = 'ISO requires exactly 90 days of retention.'
         r = caso.evaluar()
         self.assertEqual(r['referencias_iso'], [])
