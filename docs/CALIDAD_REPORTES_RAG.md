@@ -1,9 +1,36 @@
 # Calidad de reportes y recuperación documental
 
-Entrega del 26 de octubre de 2026, rama `mejora/calidad-reportes-rag`.
+Registro histórico del 26 de octubre de 2026, rama `mejora/calidad-reportes-rag`.
 Continúa la integración de interfaz y documentos de `origin/main` (`9f550cc`).
 
-## Cambios
+## Estado actualizado — 27 de octubre de 2026
+
+- Modelo principal: `qwen3.5:4b-q4_K_M`. Se conserva `embeddinggemma` para
+  recuperación documental; `qwen2.5:3b` fue eliminado y se verificó la lista local.
+- Documento ISO disponible localmente y excluido de Git. El escenario de prueba
+  recupera seis fragmentos ISO y dos artículos legales por búsqueda temática.
+- Sin cupos de riesgos, indicadores o referencias. Contexto predeterminado de
+  32.768 tokens y presupuesto de salida de 16.384; respuestas truncadas rechazadas.
+- 79 pruebas automatizadas aprobadas. Se incluye vinculación de cada fuente
+  con sus propios extractos en el contrato, además del cotejo posterior.
+- La primera prueba retomada falló tras dos intentos en 1.253,9 segundos por
+  una referencia RAG inválida. No se publicó el análisis como reporte de IA.
+- Con el esquema corregido, la prueba terminó al primer intento en **629,5 segundos**:
+  5 citas ISO, 1 legal y 5 RAG cotejadas. La revisión encontró supuestos sin sustento,
+  relaciones RAG genéricas e indicadores inadecuados; no se aprobó el contenido.
+- Se añadieron alertas parciales de coherencia y un encabezado de borrador. Se comprobó
+  su comportamiento con regresiones y con el contenido de la salida real guardada.
+- Se entregó `../agente_riesgos_pims_v2/reporte_ejemplo_revisado.md`, corregido por el
+  asistente y diferenciado de la salida automática. Incluye 3 riesgos sustentados,
+  5 indicadores y datos pendientes, sin inferir controles ausentes del silencio.
+- Validación retomada terminada; no quedan generaciones en curso. Qwen 3.5 no quedó
+  acreditado como generador autónomo de reportes correctos y sigue siendo lento en CPU.
+  Detalle en `../ESTADO_VALIDACION.md`.
+
+Las secciones siguientes documentan los ensayos anteriores; las cifras y
+pendientes del 26 de octubre no describen la configuración actual.
+
+## Cambios históricos
 
 - Segmentación por palabras/oraciones con solapamiento, preservación de secciones
   Markdown y exclusión de fragmentos muy breves. El corpus local genera 430
@@ -71,7 +98,7 @@ conservan su solicitud compatible. Fuentes de configuración:
 [Ollama: thinking](https://docs.ollama.com/capabilities/thinking) y
 [Qwen 3.5 4B Q4_K_M](https://ollama.com/library/qwen3.5:4b-q4_K_M).
 
-## Estado al publicar este avance
+## Estado histórico al publicar el avance del 26 de octubre
 
 - El código y las pruebas de recuperación, citas, reporte y contrato están listos.
 - Con la separación mejorada de hechos y fuentes, `qwen2.5:3b` produjo un análisis
@@ -104,6 +131,6 @@ Una cita cotejada demuestra procedencia textual, no corrección de la interpreta
 La relevancia de una búsqueda no es una probabilidad de acierto. Un plan de otra
 organización sirve de referencia y no impone obligaciones a la universidad.
 La suite sintética no valida el contenido de la norma ISO ni la precisión general
-del modelo. El documento ISO autorizado no está presente en este equipo.
+del modelo. El documento ISO faltaba durante los ensayos del 26 de octubre; ya está disponible localmente.
 La revisión visual en navegador y una evaluación amplia con varios escenarios
 no forman parte de los resultados automatizados registrados aquí.

@@ -13,7 +13,7 @@ def objeto(campos):
 
 
 ESQUEMA_ANALISIS = objeto({
-    'riesgos_identificados': {'type': 'array', 'maxItems': 3, 'items': objeto({'riesgo': TEXTO, 'explicacion': TEXTO, 'evidencia': TEXTO,
+    'riesgos_identificados': {'type': 'array', 'items': objeto({'riesgo': TEXTO, 'explicacion': TEXTO, 'evidencia': TEXTO,
         'amenaza': TEXTO, 'vulnerabilidad': TEXTO, 'dano_personas': TEXTO,
         'medida_concreta': TEXTO, 'verificacion': TEXTO,
         'prioridad': {'type': 'string', 'enum': ['alta', 'media', 'baja']}})},
@@ -28,20 +28,20 @@ ESQUEMA_ANALISIS = objeto({
         'confianza': {'type': 'string', 'enum': ['baja', 'media', 'alta']},
         'datos_faltantes': LISTA,
     }),
-    'indicadores_riesgo': {'type': 'array', 'maxItems': 2, 'items': objeto({
+    'indicadores_riesgo': {'type': 'array', 'items': objeto({
         'riesgo': TEXTO, 'indicador': TEXTO, 'formula': TEXTO,
         'evidencia': TEXTO, 'fuente_datos': TEXTO, 'frecuencia': TEXTO,
         'umbral_propuesto': TEXTO,
     })},
-    'referencias_rag': {'type': 'array', 'maxItems': 3, 'items': objeto({
+    'referencias_rag': {'type': 'array', 'items': objeto({
         'riesgo': TEXTO, 'fuente_id': TEXTO, 'cita': TEXTO,
         'aplicacion': TEXTO, 'evidencia': TEXTO,
     })},
-    'referencias_ley': {'type': 'array', 'maxItems': 3, 'items': objeto({
+    'referencias_ley': {'type': 'array', 'items': objeto({
         'riesgo': TEXTO, 'articulo': TEXTO, 'evidencia': TEXTO,
         'motivo': TEXTO, 'evidencia_requerida': TEXTO, 'cita_normativa': TEXTO,
     })},
-    'referencias_iso': {'type': 'array', 'maxItems': 3, 'items': objeto({
+    'referencias_iso': {'type': 'array', 'items': objeto({
         'riesgo': TEXTO, 'control': TEXTO, 'evidencia': TEXTO,
         'motivo': TEXTO, 'evidencia_requerida': TEXTO, 'cita_normativa': TEXTO,
     })},
@@ -63,15 +63,34 @@ sin asignar una categoría jurídica no sustentada.
 No uses información de documentos como si describiera lo sucedido en el escenario.
 
 ANÁLISIS
-Identifica hasta 3 riesgos distintos, ordenados por prioridad. No dupliques el mismo problema con otro nombre.
+Identifica todos los riesgos distintos sustentados en el escenario, ordenados por prioridad, sin cupo numérico. No dupliques el mismo problema con otro nombre.
 Para cada uno explica quién podría acceder o actuar, por qué mecanismo y qué perjuicio concreto
 podrían sufrir las personas, vinculándolo con los datos y sistemas realmente descritos.
 En medida_concreta detalla acciones sobre el activo del caso (qué cambiar y cómo).
 En verificacion especifica la prueba, resultado esperado y evidencia que se conservaría.
-Usa una o dos frases concretas por campo; evita repetir la misma explicación en varios campos.
+Desarrolla cada campo con la extensión necesaria para explicar el mecanismo y la decisión.
+Revisa cada proceso, activo, actor y etapa del ciclo de vida mencionados: recopilación, uso,
+acceso, transferencia, conservación y eliminación. Incluye confidencialidad, integridad,
+disponibilidad y derechos de las personas cuando haya hechos que los sustenten.
+Distingue amenaza (evento o actor), vulnerabilidad (condición que lo facilita), riesgo
+(escenario de daño) y consecuencia. No conviertas cada control ausente en un duplicado.
+Diferencia los roles responsable y encargado; si no están definidos, pide confirmación.
+Separa explícitamente en explicacion los hechos, las inferencias y lo pendiente de confirmar.
+REVISIÓN OBLIGATORIA ANTES DE ENTREGAR:
+- Una copia diaria declarada es un control existente. No inventes que es manual, no cifrada,
+  ineficaz o inexistente. Pregunta por pruebas de restauración en datos_faltantes; la falta
+  de información sobre ellas NO es otro riesgo confirmado.
+- DNI y dirección de correo son datos personales; no los llames datos sensibles por defecto.
+- No afirmes que se vulnera o viola una norma, ni que existe incumplimiento: formula una
+  posible brecha sujeta a comprobar su aplicabilidad. No inventes plazos de conservación.
+- No extiendas el alcance a todos los estudiantes ni al contenido de sus correos.
+- Las citas deben seleccionarse de las opciones literales del contrato y pertenecer a la
+  fuente que identificas. Nunca las resumas ni agregues puntos suspensivos.
+Antes de cerrar, contrasta cada hecho con los riesgos: no omitas hechos por priorizar solo los primeros.
+Evita repetir la misma explicación en varios campos.
 Evita recomendaciones intercambiables como 'mejorar seguridad', 'cumplir la ley' o 'capacitar personal'.
 No presupongas herramientas ni plazos; si propones roles o frecuencia, aclara que deben acordarse.
-La justificacion debe sintetizar exposición, controles existentes y límites del diagnóstico en 2–3 párrafos.
+La justificacion debe sintetizar exposición, controles existentes y límites del diagnóstico con el desarrollo necesario.
 Las recomendaciones deben ordenar el trabajo: contención inicial, corrección y seguimiento,
 sin repetir literalmente los riesgos. Si falta información, pregunta por datos que cambiarían la decisión.
 
@@ -80,14 +99,14 @@ Conserva la valoración del usuario. opinion_llm ofrece una estimación independ
 probabilidad 1–5 según exposición y controles; impacto 1–5 según datos, alcance y daño a las personas.
 Si no puedes justificar ambas cifras, usa null en ambas. Python calcula el puntaje.
 Es una matriz académica, no una escala obligatoria de ISO. No prometas reducción o riesgo residual.
-Propón hasta 2 indicadores medibles: fórmula, fuente observable, frecuencia y umbral propuesto.
+Propón indicadores medibles para cada riesgo identificado cuando exista una medición viable: fórmula, fuente observable, frecuencia y umbral propuesto.
 No inventes mediciones actuales. Una fórmula debe contar observaciones verificables, no sumar
 constantes arbitrarias. Ejemplo de estructura (adapta al caso): enlaces públicos con datos personales /
 enlaces revisados × 100; fuente: inventario de enlaces y pruebas sin sesión; meta propuesta: 0%.
 Nunca uses 'contexto de evaluación' como fuente de medición.
 
 SUSTENTO DOCUMENTAL
-contexto_rag contiene fuentes F1, F2, etc. En referencias_rag vincula hasta 3 de ellas con un
+contexto_rag contiene fuentes F1, F2, etc. En referencias_rag vincula todas las fuentes pertinentes con un
 riesgo identificado: copia una cita literal de 20–240 caracteres y explica en aplicacion cómo
 orienta la medida concreta, qué límite tiene y qué debe confirmarse. Usa solamente IDs recibidos.
 Si el fragmento no aporta al riesgo, no lo cites; no fuerces referencias para llenar el informe.
@@ -104,6 +123,22 @@ la interpretación o aplicabilidad jurídica. Devuelve solo JSON, sin comentario
 def hechos_citables(descripcion):
     return [frase.strip() for frase in re.split(r'(?<=[.!?;])\s+|\n+', descripcion)
             if 8 <= len(frase.strip()) <= 500]
+
+
+def citas_disponibles(fragmentos, maximo):
+    """Opciones literales breves para impedir citas inventadas o demasiado largas."""
+    citas = []
+    for fragmento in fragmentos:
+        for linea in fragmento.get('texto', '').splitlines():
+            if linea.lstrip().startswith(('#', '<!--', 'CONCORDANCIAS:')):
+                continue
+            for frase in re.split(r'(?<=[.;:])\s+', ' '.join(linea.split())):
+                # Una cita puede ser un tramo literal, sin puntos suspensivos añadidos.
+                for inicio in range(0, len(frase), maximo):
+                    cita = frase[inicio:inicio + maximo].strip()
+                    if len(cita) >= 20:
+                        citas.append(cita)
+    return list(dict.fromkeys(citas))
 
 
 def construir_esquema(contexto):
@@ -126,6 +161,23 @@ def construir_esquema(contexto):
         if valores:
             campos = propiedades[campo]['items']['properties']
             campos[identificador] = dict(campos[identificador], enum=valores)
+            campo_cita = 'cita' if identificador == 'fuente_id' else 'cita_normativa'
+            citas = citas_disponibles(contexto[contexto_clave]['fragmentos'],
+                                     240 if identificador == 'fuente_id' else 160)
+            if citas:
+                # Cada alternativa une una fuente con SUS extractos. Dos enums
+                # independientes permiten atribuir una cita real a otra fuente.
+                alternativas = []
+                for fragmento in contexto[contexto_clave]['fragmentos']:
+                    citas_fuente = citas_disponibles([fragmento],
+                                                   240 if identificador == 'fuente_id' else 160)
+                    if clave not in fragmento or not citas_fuente:
+                        continue
+                    alternativa = deepcopy(propiedades[campo]['items'])
+                    alternativa['properties'][identificador] = dict(TEXTO, enum=[fragmento[clave]])
+                    alternativa['properties'][campo_cita] = dict(TEXTO, enum=citas_fuente)
+                    alternativas.append(alternativa)
+                propiedades[campo]['items'] = {'anyOf': alternativas}
         else:
             propiedades[campo]['maxItems'] = 0
     return esquema

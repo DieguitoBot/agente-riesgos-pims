@@ -73,7 +73,7 @@ def recuperar_contexto(descripcion, rol):
             candidatos.append((puntos, dict(seccion, control=codigo, nombre=control['nombre'],
                 texto=seccion['texto'][:2200], truncado=len(seccion['texto']) > 2200)))
     candidatos.sort(key=lambda item: (-item[0], item[1]['control']))
-    fragmentos = [item[1] for item in candidatos[:4]]
+    fragmentos = [item[1] for item in candidatos]
     return dict(estado='recuperado' if fragmentos else 'sin_coincidencias', fragmentos=fragmentos,
         sha256=huella, mensaje='Fuente OCR aportada por el usuario; verificar ambigüedades con el PDF. '
         'Selección por temas sobre un catálogo parcial; no demuestra exhaustividad normativa.')

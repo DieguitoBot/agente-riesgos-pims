@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from knowledge.evidencia_rag import validar_citas_rag
-from llm.ollama_client import analizar_con_ollama, OllamaError
+from llm.ollama_client import analizar_con_ollama, OllamaError, validar_analisis, validar_vinculos_documentales
 from prompts.riesgo_prompt import construir_mensajes, construir_esquema, ESQUEMA_ANALISIS
 from tests.test_ollama_client import ANALISIS
 from skills.evaluacion_riesgo import _complementar
@@ -21,6 +21,87 @@ class TestCalidadReporte(unittest.TestCase):
         self.cita = dict(riesgo='Acceso no autorizado', fuente_id='F1',
                          evidencia='sin control de acceso', cita=self.fuente['texto'],
                          aplicacion='Delimitar permisos sobre los registros; verificar la finalidad del acceso.')
+
+    def test_contrato_acepta_reportes_sin_cupos_de_contenido(self):
+        analisis = copy.deepcopy(ANALISIS)
+        for campo in ('riesgos_identificados', 'indicadores_riesgo', 'referencias_iso',
+                      'referencias_ley', 'referencias_rag'):
+            esquema = ESQUEMA_ANALISIS['properties'][campo]
+            self.assertNotIn('maxItems', esquema)
+            plantilla = {k: ('alta' if k == 'prioridad' else 'Contenido verificable')
+                         for k in esquema['items']['properties']}
+            analisis[campo] = [dict(plantilla, riesgo=f'Riesgo {i}') for i in range(101)]
+        validado = validar_analisis(analisis)
+        for campo in ('riesgos_identificados', 'indicadores_riesgo', 'referencias_iso',
+                      'referencias_ley', 'referencias_rag'):
+            self.assertEqual(len(validado[campo]), 101)
+
+    def test_presupuesto_configurable_y_truncamiento_no_publicable(self):
+        with patch.dict('os.environ', {'OLLAMA_NUM_CTX': '40000', 'OLLAMA_NUM_PREDICT': '20000'}), \
+                patch('llm.ollama_client._solicitar', return_value={
+                    'done': True, 'done_reason': 'length',
+                    'message': {'content': json.dumps(ANALISIS)}}) as pedir:
+            with self.assertRaisesRegex(OllamaError, 'límite de generación'):
+                analizar_con_ollama(self.contexto)
+        self.assertEqual(pedir.call_count, 2)
+        self.assertEqual(pedir.call_args.kwargs['json']['options']['num_predict'], 20000)
+        self.assertEqual(pedir.call_args.kwargs['json']['options']['num_ctx'], 40000)
+
+    def test_api_exporta_todos_los_riesgos_e_indicadores(self):
+        analisis = copy.deepcopy(ANALISIS)
+        analisis['riesgos_identificados'] = [
+            dict(ANALISIS['riesgos_identificados'][0], riesgo=f'Riesgo {i}') for i in range(6)]
+        analisis['indicadores_riesgo'] = [dict(
+            riesgo=f'Riesgo {i}', indicador=f'Indicador {i}', evidencia='sin control de acceso',
+            formula='accesos rechazados / accesos revisados * 100',
+            fuente_datos='Registro de pruebas de acceso', frecuencia='Mensual propuesta',
+            umbral_propuesto='100% propuesto') for i in range(6)]
+        with patch('skills.evaluacion_riesgo.analizar_con_ollama', return_value=analisis), \
+                patch('rag.recuperar_contexto.recuperar_contexto_rag', return_value={
+                    'estado': 'sin_indice', 'fragmentos': [], 'mensaje': 'Prueba'}):
+            respuesta = app.test_client().post('/api/evaluar', json={
+                'descripcion': self.contexto['descripcion'], 'probabilidad': 3,
+                'impacto': 4, 'exigir_ia': True})
+        self.assertEqual(respuesta.status_code, 200)
+        resultado = respuesta.get_json()
+        self.assertEqual(len(resultado['analisis_ia']['riesgos_identificados']), 6)
+        self.assertEqual(len(resultado['indicadores_riesgo']), 6)
+        self.assertIn('6. Riesgo 5', resultado['reporte_texto'])
+        self.assertIn('Indicador 5', resultado['reporte_texto'])
+
+    def test_citas_del_contrato_son_extractos_literales_acotados(self):
+        contexto = copy.deepcopy(self.contexto)
+        contexto['contexto_legal'] = {'fragmentos': [dict(
+            articulo='9', texto='Artículo 9. Seguridad\n' + 'Contenido verificable de la fuente documental. ' * 10)]}
+        esquema = construir_esquema(contexto)['properties']
+        for campo, texto, maximo, clave in (
+                ('referencias_rag', self.fuente['texto'], 240, 'cita'),
+                ('referencias_ley', contexto['contexto_legal']['fragmentos'][0]['texto'], 160, 'cita_normativa')):
+            citas = esquema[campo]['items']['anyOf'][0]['properties'][clave]['enum']
+            self.assertTrue(citas)
+            for cita in citas:
+                self.assertTrue(20 <= len(cita) <= maximo)
+                self.assertIn(cita, ' '.join(texto.split()))
+
+    def test_contrato_vincula_cada_cita_con_su_fuente(self):
+        contexto = copy.deepcopy(self.contexto)
+        segunda = dict(self.fuente, id='F2', texto='La conservación requiere un plazo documentado para cada finalidad.')
+        contexto['contexto_rag']['fragmentos'].append(segunda)
+        opciones = construir_esquema(contexto)['properties']['referencias_rag']['items']['anyOf']
+        self.assertEqual(len(opciones), 2)
+        for opcion, fuente in zip(opciones, contexto['contexto_rag']['fragmentos']):
+            campos = opcion['properties']
+            self.assertEqual(campos['fuente_id']['enum'], [fuente['id']])
+            for cita in campos['cita']['enum']:
+                self.assertIn(cita, fuente['texto'])
+
+    def test_cita_invalida_pide_reparacion_antes_de_publicar(self):
+        analisis = copy.deepcopy(ANALISIS)
+        analisis['referencias_rag'] = [dict(self.cita, cita='Una cita inexistente en esta fuente documental.')]
+        with self.assertRaisesRegex(OllamaError, 'Referencia inválida'):
+            validar_vinculos_documentales(analisis, self.contexto)
+        analisis['referencias_rag'] = [self.cita]
+        validar_vinculos_documentales(analisis, self.contexto)
 
     def test_cita_rag_conserva_procedencia(self):
         self.analisis['referencias_rag'] = [self.cita]
@@ -96,12 +177,12 @@ class TestCalidadReporte(unittest.TestCase):
             analizar_con_ollama(self.contexto)
         solicitud = pedir.call_args.kwargs['json']
         self.assertFalse(solicitud['think'])
-        self.assertEqual(solicitud['options']['num_predict'], 3600)
+        self.assertEqual(solicitud['options']['num_predict'], 16384)
         self.assertEqual(solicitud['options']['presence_penalty'], 0)
 
     def test_contrato_restringe_hechos_y_fuentes_sin_mutar_otras_solicitudes(self):
         esquema = construir_esquema(self.contexto)['properties']
-        self.assertEqual(esquema['referencias_rag']['items']['properties']['fuente_id']['enum'], ['F1'])
+        self.assertEqual(esquema['referencias_rag']['items']['anyOf'][0]['properties']['fuente_id']['enum'], ['F1'])
         self.assertEqual(esquema['riesgos_identificados']['items']['properties']['evidencia']['enum'],
                          [self.contexto['descripcion']])
         self.assertEqual(esquema['referencias_iso']['maxItems'], 0)

@@ -51,7 +51,7 @@ def recuperar_contexto_legal(descripcion):
     candidatos = [(sum(p in texto for p in palabras), numero)
                   for numero, palabras in TEMAS.items() if numero in articulos]
     candidatos.sort(key=lambda par: (-par[0], int(par[1])))
-    elegidos = [numero for puntos, numero in candidatos if puntos][:3]
+    elegidos = [numero for puntos, numero in candidatos if puntos]
     # El artículo 14 da contexto a las excepciones al consentimiento, sin proponer una brecha adicional.
     if '5' in elegidos and '14' in articulos:
         elegidos.append('14')

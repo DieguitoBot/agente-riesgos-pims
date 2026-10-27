@@ -11,6 +11,8 @@ htmlcov/
 !.env.example
 *.log
 reporte_ia.txt
+reporte_ia_ampliado.txt
+reporte_ia_validacion.txt
 reporte-riesgos-privacidad*.txt
 dist/
 .DS_Store

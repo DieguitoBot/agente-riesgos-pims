@@ -6,6 +6,7 @@ from knowledge.documento_iso import recuperar_contexto
 from config import obtener_modelo, obtener_configuracion
 from knowledge.documento_ley import recuperar_contexto_legal, validar_referencias
 from skills.reporte import generar_reporte
+from skills.revision_contenido import revisar_contenido
 from knowledge.evidencia_rag import validar_citas_rag
 from llm.ollama_client import OllamaError, analizar_con_ollama
 
@@ -270,6 +271,12 @@ def evaluar_riesgo(descripcion, probabilidad, impacto, categorias=None, rol_priv
     if 'referencias_rag' in analisis:
         analisis['referencias_rag'] = referencias_rag
     resultado['avisos_revision'].extend(avisos_rag)
+    resultado['alertas_contenido'] = revisar_contenido(analisis) if disponible else []
+    resultado['avisos_revision'].extend(resultado['alertas_contenido'])
+    resultado['estado_revision'] = ('requiere_revision_por_alertas' if resultado['alertas_contenido']
+                                    else 'pendiente_de_revision') if disponible else 'sin_analisis_ia'
+    if resultado['alertas_contenido']:
+        resultado['mensaje'] += ' Borrador con alertas de coherencia; revisar antes de utilizar.'
     resultado['reporte_ia_generado'] = disponible
     resultado['reporte_texto'] = generar_reporte(resultado)
     return resultado
@@ -320,6 +327,10 @@ def _complementar(analisis, contexto, disponible):
                     continue
                 destino.append(dict(item, valor_actual=None, estado='Pendiente de medición',
                                     origen='Propuesta de Ollama'))
+    if disponible:
+        medidos = {item['riesgo'] for item in indicadores}
+        for riesgo in sorted(riesgos - medidos):
+            avisos.append(f'Cobertura pendiente: el riesgo «{riesgo}» no tiene un indicador verificable; definir su medición.')
     if not disponible:
         avisos.append('Sin opinión IA ni referencias normativas: Ollama no produjo un análisis válido.')
     return dict(valoracion_ia=valoracion, indicadores_riesgo=indicadores,

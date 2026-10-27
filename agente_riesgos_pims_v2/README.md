@@ -27,8 +27,8 @@ No se descargan modelos automáticamente.
 | Variable | Predeterminado |
 | --- | --- |
 | OLLAMA_URL | http://127.0.0.1:11434 |
-| OLLAMA_MODEL | qwen2.5:3b |
-| OLLAMA_TIMEOUT | 300 segundos por solicitud de generación |
+| OLLAMA_MODEL | qwen3.5:4b-q4_K_M |
+| OLLAMA_TIMEOUT | 900 segundos por solicitud de generación |
 
 No se lee `.env` automáticamente. Ejemplo con un modelo instalado distinto:
 
@@ -50,23 +50,27 @@ inválida muestra el motivo y permite elegir otro modelo o reintentar. No ofrece
 reporte básico como si fuera IA. La API conserva el respaldo de reglas para sus
 consumidores anteriores, con un origen explícito.
 
-Se solicitan hasta 3 riesgos distintos, 2 indicadores y 3 referencias por tipo.
-Cada riesgo incluye evidencia literal del escenario, amenaza, vulnerabilidad,
-daño potencial, medida concreta, prioridad y criterio de cierre verificable.
-Se usan hasta 4 fragmentos ISO de 2.200 caracteres, hasta 3 artículos legales de
-1.800 caracteres (más excepciones al consentimiento cuando corresponde) y hasta
-5 fragmentos RAG, con un máximo de 2 por archivo.
+Se solicitan todos los riesgos sustentados, indicadores por riesgo y referencias pertinentes,
+sin cupos numéricos en el contrato. Cada riesgo distingue hechos, inferencias, amenaza,
+vulnerabilidad, daño, medida, prioridad y criterio de cierre. No se añaden riesgos sin evidencia.
+Se recuperan todos los controles ISO y artículos legales con coincidencias temáticas
+(fragmentos de 2.200 y 1.800 caracteres respectivamente) y hasta 12 fragmentos RAG,
+con un máximo de 2 por archivo para mantener diversidad. La recuperación sigue siendo
+selectiva: un reporte extenso no garantiza cobertura documental exhaustiva.
 
-Ollama recibe el contrato JSON mediante `format`, un contexto de 12.288 tokens,
-un máximo de 5.200 tokens de salida y temperatura 0. El esquema no se duplica en
-el prompt. Para Qwen 3/3.5 se desactiva el razonamiento previo con `think: false`,
-se usa temperatura 0,2, penalización de presencia 0 y hasta 3.600 tokens de salida.
-El contrato limita hechos citables y referencias a las fuentes de cada solicitud;
-se conserva la validación posterior. Ante formato o evidencia inválidos se permite un reintento detallado
-que conserva los documentos y explica el error. No se repiten errores de conexión
-ni timeouts. Por compatibilidad todavía se admite una respuesta breve válida en
-el segundo intento, identificada sin cifras ni referencias normativas verificadas.
-Dos intentos pueden consumir aproximadamente dos veces el timeout configurado.
+Ollama recibe el contrato JSON mediante `format`. `OLLAMA_NUM_CTX` configura el contexto
+(predeterminado: 32768 tokens) y `OLLAMA_NUM_PREDICT` el presupuesto de salida
+(predeterminado: 16384); ambos deben ser positivos y la salida menor que el contexto.
+Son límites técnicos configurables, no cuotas de riesgos. Una respuesta truncada se rechaza.
+Para Qwen 3/3.5 se usa `think: false`, temperatura 0,2 y penalización de presencia 0,
+con el mismo presupuesto completo de salida. El modelo principal es `qwen3.5:4b-q4_K_M`;
+`embeddinggemma` sigue siendo necesario para el RAG. No se necesita mantener Qwen 2.5.
+El contrato vincula cada fuente con sus propios extractos literales mediante alternativas JSON Schema;
+la validación vuelve a comprobar la correspondencia entre cita y fuente, riesgo y evidencia.
+Ante formato, citas o evidencia inválidos se permite un reintento detallado que conserva las fuentes.
+No se acepta un informe breve como sustituto. No se repiten errores de conexión ni timeouts.
+`OLLAMA_TIMEOUT` vale 900 segundos por defecto; dos intentos pueden consumir el doble.
+Un contexto mayor requiere más memoria y tiempo; no equivale a mayor precisión garantizada.
 La interfaz muestra tiempo transcurrido y espera la respuesta sin streaming.
 
 El RAG combina búsqueda semántica con FAISS y puntuación de términos BM25,
@@ -120,7 +124,7 @@ Los temas españoles son resúmenes propios.
   "impacto": 4,
   "categorias": ["Identificación"],
   "rol_privacidad": "responsable",
-  "modelo": "qwen2.5:3b",
+  "modelo": "qwen3.5:4b-q4_K_M",
   "exigir_ia": true
 }
 ```
@@ -179,3 +183,12 @@ Para repetir la evaluación real con un escenario ficticio:
 ```bash
 .venv/bin/python comprobar_ia.py --entrada ejemplo_calidad_rag.json
 ```
+
+El comando muestra cuándo empieza cada intento y el motivo de un eventual rechazo.
+Solo guarda el reporte cuando la respuesta supera la validación automática; todavía
+requiere revisión del contenido, de las inferencias y de la aplicabilidad de las fuentes.
+La respuesta incluye `estado_revision` y `alertas_contenido`: se advierten algunas
+carencias inferidas de información desconocida, hechos diferentes entre riesgo e
+indicador y aplicaciones RAG repetidas. Son alertas parciales; su ausencia no acredita
+corrección. La exportación identifica el texto como borrador y muestra estas alertas
+al inicio. El ensayo real y sus límites están en [el estado de validación](../ESTADO_VALIDACION.md).

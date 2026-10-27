@@ -1,6 +1,7 @@
 """Prueba real desde tu terminal: genera un reporte solo si Ollama responde válidamente."""
 import argparse
 import json
+import logging
 import sys
 import time
 from pathlib import Path
@@ -13,9 +14,12 @@ def main():
     parser.add_argument('--entrada', type=Path, default=Path(__file__).with_name('ejemplo_solicitud.json'))
     parser.add_argument('--salida', type=Path, default=Path('reporte_ia.txt'))
     args = parser.parse_args()
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(message)s')
+    logging.getLogger('llm.ollama_client').setLevel(logging.INFO)
     try:
         datos = json.loads(args.entrada.read_text(encoding='utf-8'))
         inicio = time.monotonic()
+        print('Recuperando fuentes y generando el reporte con Ollama local...', flush=True)
         resultado = evaluar_riesgo(datos['descripcion'], datos['probabilidad'], datos['impacto'],
                                   datos.get('categorias'), datos.get('rol_privacidad', 'no_definido'), args.modelo)
         print(f"Tiempo total: {time.monotonic() - inicio:.1f} segundos")
@@ -27,6 +31,9 @@ def main():
         print(f"Referencias verificadas: ISO {len(resultado['referencias_iso'])}; "
               f"ley {len(resultado['referencias_ley'])}; RAG {len(resultado['referencias_rag'])}")
         print('RAG: ' + resultado['estado_rag'])
+        print('Revisión de contenido: ' + resultado['estado_revision'])
+        for aviso in resultado['alertas_contenido']:
+            print('Revisar: ' + aviso)
         return 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(str(exc), file=sys.stderr)
