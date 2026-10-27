@@ -81,7 +81,7 @@ class TestReporteLey(unittest.TestCase):
             req.return_value.json.side_effect = [
                 {'message': {'content': '{}'}},
                 {'message': {'content': json.dumps(ANALISIS)}}]
-            self.assertEqual(analizar_con_ollama({'descripcion': 'Escenario'}), ANALISIS)
+            self.assertEqual(analizar_con_ollama({'descripcion': 'Datos sin control de acceso'}), ANALISIS)
             self.assertEqual(req.call_count, 2)
             self.assertIn('contrato', req.call_args.kwargs['json']['messages'][0]['content'])
         with patch('llm.ollama_client.requests.Session') as session:

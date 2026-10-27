@@ -28,7 +28,8 @@ opcionales y rol opcional (`responsable`, `encargado`, `ambos`, `no_definido`).
 7. Descartar citas ausentes del contexto recuperado y detalles sin evidencia
    literal, sin riesgo vinculado o con código
    ajeno al catálogo o rol. Enriquecer las referencias desde el catálogo local.
-8. Si falla el contrato detallado, solicitar una vez el informe breve de IA.
+8. Si falla el contrato o la evidencia literal, reintentar una vez el análisis
+   detallado conservando el contexto documental e indicando el error.
    Si falla también, entregar respaldo explícito a consumidores de la Skill;
    la interfaz exige IA y muestra el error sin publicar ese respaldo como IA.
 9. Devolver el resultado estructurado a Flask. La Skill también puede llamarse
@@ -49,8 +50,8 @@ confirmados. El catálogo es parcial y no sustituye la norma autorizada.
 valida la respuesta. `skills/evaluacion_riesgo.py` implementa el proceso y el
 respaldo. `knowledge/controles_iso.py` mantiene los códigos y fuentes.
 Se usa el contexto suministrado, el Markdown del usuario mediante recuperación
-local por temas y un catálogo parcial estático. No hay embeddings, FAISS ni
-integración entre agentes. La interfaz permite exportar el reporte como texto.
+local por temas, un catálogo parcial estático y recuperación híbrida con
+embeddings y FAISS sobre documentos locales. No hay integración entre agentes. La interfaz permite exportar el reporte como texto.
 
 ## Reporte y soporte legal de la v2
 
@@ -71,8 +72,13 @@ indica el origen; `reporte_texto` se construye desde la respuesta validada, sin
 una segunda generación. Se permite un reintento de errores de formato, sin repetir
 automáticamente timeouts.
 
-Si el contrato detallado falla, el segundo intento usa un contrato breve con
-informe narrativo, riesgos, hechos literales y medidas. Es contenido real de IA,
-identificado como `formato_ia: "breve"`, sin cifras de IA ni referencias verificadas.
-No se inventan esos complementos a partir de reglas. El reporte conserva la
-valoración del usuario y muestra expresamente las limitaciones del formato breve.
+Si el contrato detallado falla, el segundo intento conserva las fuentes y solicita
+corregir la respuesta detallada. Por compatibilidad, si llega una respuesta breve
+válida se admite con `formato_ia: "breve"`, sin cifras de IA ni referencias
+normativas verificadas. No se inventan complementos a partir de reglas.
+
+Las relaciones RAG usan IDs de los fragmentos recuperados y citas literales,
+vinculadas al nombre de un riesgo y a evidencia del escenario. Las relaciones
+no verificables se eliminan tanto del reporte como del análisis devuelto por la
+API. El reporte muestra por separado los fragmentos recuperados y las citas
+utilizadas. Su procedencia textual no prueba la interpretación del modelo.

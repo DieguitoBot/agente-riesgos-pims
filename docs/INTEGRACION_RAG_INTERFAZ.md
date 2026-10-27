@@ -1,5 +1,8 @@
 # Integración local de interfaz y RAG — 26 de octubre de 2026
 
+Registro histórico de la primera integración. Los ajustes y resultados posteriores
+están en [Calidad de reportes RAG](CALIDAD_REPORTES_RAG.md).
+
 Rama de prueba: `integracion/interfaz-tratamiento-rag`.
 
 Se guardó la interfaz en el commit `469add0` y se integró `origin/main`

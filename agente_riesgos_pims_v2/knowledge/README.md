@@ -15,5 +15,6 @@ edición, rol y fuente antes de incorporarse.
 `../../ISO_IEC_27701_2025.md`. Selecciona por temas y rol dentro del catálogo
 parcial, conserva página OCR y línea y envía texto real al prompt. Valida que la
 cita devuelta esté en un fragmento enviado. Se trata de recuperación documental
-local por temas; embeddings y FAISS siguen pendientes. Los errores OCR se
+local por temas, complementada por el RAG híbrido de `../rag/` con embeddings
+y FAISS sobre los archivos de `documentos/`. Los errores OCR se
 conservan y deben contrastarse con el PDF original.

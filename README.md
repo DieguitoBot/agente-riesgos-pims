@@ -15,7 +15,7 @@ Desde la raíz del repositorio, en Linux/macOS:
 ```bash
 cd agente_riesgos_pims_v2
 python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements.txt -r requirements-rag.txt
 bash iniciar.sh
 ```
 
@@ -24,7 +24,7 @@ En Windows PowerShell:
 ```powershell
 cd agente_riesgos_pims_v2
 py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-rag.txt
 .\.venv\Scripts\python.exe iniciar_local.py
 ```
 
@@ -32,6 +32,23 @@ El lanzador muestra la dirección local y abre el navegador. Comprueba los model
 con `ollama list`; si no hay servicio, ejecuta `ollama serve` en otra terminal.
 El modelo predeterminado es `qwen2.5:3b`; puedes elegir uno ya instalado en la web.
 El proyecto no descarga modelos automáticamente. No carga archivos `.env`.
+
+## Activar el RAG
+
+Con Ollama iniciado, desde `agente_riesgos_pims_v2/`:
+
+```bash
+ollama pull qwen2.5:3b
+ollama pull embeddinggemma
+.venv/bin/python -m rag.indexar
+.venv/bin/python comprobar_ia.py --entrada ejemplo_calidad_rag.json
+```
+
+En Windows usa `.\.venv\Scripts\python.exe`. El índice se genera localmente y
+no se sube a Git. Reindexa al cambiar los documentos, el modelo de embeddings o
+la versión de segmentación. La búsqueda combina embeddings FAISS y términos;
+el reporte distingue fuentes recuperadas de citas verificadas usadas por la IA.
+Sin dependencias o índice, la aplicación informa que el RAG no está disponible.
 
 ## Documentos locales
 
@@ -61,16 +78,19 @@ node --check static/js/app.js
 ```
 
 En Windows sustituir `.venv/bin/python` por `.\.venv\Scripts\python.exe`.
-La suite completa necesita ambos Markdown originales. Las respuestas de IA de
+Las pruebas ISO usan un documento sintético y no necesitan la copia privada.
+Las pruebas legales usan el Markdown incluido en el repositorio. Las respuestas de IA de
 los tests están simuladas; `comprobar_ia.py` requiere Ollama real. No confundir una
 suite aprobada con una evaluación de calidad del modelo.
 
 ## Alcance y colaboración
 
 No implementa auditoría, certificación legal, orquestador, comunicación entre
-agentes, PostgreSQL, embeddings ni FAISS. La recuperación documental es temática.
+agentes ni PostgreSQL. Incluye RAG local con embeddings y FAISS, además de
+recuperación temática para referencias ISO y legales.
 La matriz es una convención académica del proyecto.
 
+- [Mejoras y validación de calidad del RAG](docs/CALIDAD_REPORTES_RAG.md).
 - [Diagnóstico y pendientes](docs/REVISION.md).
 - [Acuerdos para contribuir](CONTRIBUTING.md).
 - [Documentación funcional y API](agente_riesgos_pims_v2/README.md).

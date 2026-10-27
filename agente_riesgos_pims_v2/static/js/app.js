@@ -133,9 +133,25 @@ function mostrarTarjetas(id, elementos, vacio, renderizar) {
 
 function mostrarComplemento(contenido) {
     document.getElementById("estado-rag").textContent = contenido.estado_rag || "Estado de recuperación no informado.";
+    mostrarTarjetas("aplicaciones-rag", contenido.referencias_rag || [],
+        "El modelo no vinculó medidas con citas RAG verificables en esta evaluación.", (tarjeta, ref) => {
+            parrafo(tarjeta, `${ref.fuente_id} · ${ref.riesgo}`);
+            parrafo(tarjeta, `Hecho: ${ref.evidencia}`);
+            parrafo(tarjeta, `Cita: “${ref.cita}”`);
+            parrafo(tarjeta, `Aplicación propuesta: ${ref.aplicacion}`);
+            parrafo(tarjeta, `${ref.archivo} · Página: ${ref.pagina ?? "No aplica"} · ${ref.estado}`);
+        });
     mostrarTarjetas("fuentes-rag", contenido.fuentes_rag || [],
         "Esta evaluación no incluye fuentes recuperadas por RAG.", (tarjeta, fuente) => {
-            parrafo(tarjeta, fuente.archivo || "Documento sin nombre");
+            parrafo(tarjeta, `${fuente.id || ""} · ${fuente.archivo || "Documento sin nombre"}`);
+            if (fuente.texto) {
+                const detalle = document.createElement("details");
+                const titulo = document.createElement("summary");
+                titulo.textContent = "Leer fragmento recuperado";
+                detalle.appendChild(titulo);
+                parrafo(detalle, fuente.texto);
+                tarjeta.appendChild(detalle);
+            }
             parrafo(tarjeta, `Página: ${fuente.pagina ?? "No indicada"} · Fragmento: ${fuente.fragmento ?? "No indicado"}`);
         });
 

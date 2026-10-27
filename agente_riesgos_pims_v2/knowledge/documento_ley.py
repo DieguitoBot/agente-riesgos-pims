@@ -70,6 +70,7 @@ def validar_referencias(analisis, contexto, disponible):
         cita = ' '.join(item['cita_normativa'].split())
         if (not fragmento or not 20 <= len(cita) <= 160
                 or cita not in ' '.join(fragmento['texto'].split())
+                or cita in (' '.join(fragmento['texto'].splitlines()[0].split()), fragmento['titulo'])
                 or item['riesgo'] not in riesgos
                 or not item['evidencia'].strip()
                 or item['evidencia'].casefold() not in contexto['descripcion'].casefold()):

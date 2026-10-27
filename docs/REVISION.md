@@ -1,5 +1,9 @@
 # Revisión del proyecto — 19 de octubre de 2026
 
+Nota posterior: los puntos C.1, C.4 (ISO) y C.5 se abordan en la entrega
+[Calidad de reportes RAG](CALIDAD_REPORTES_RAG.md). Este documento conserva
+el diagnóstico histórico; las mejoras opcionales no forman parte de esa entrega.
+
 ## A. Estado general
 
 La v2 es una skill funcional especializada con interfaz Flask y Ollama local.

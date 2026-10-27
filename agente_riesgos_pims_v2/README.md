@@ -50,24 +50,31 @@ inválida muestra el motivo y permite elegir otro modelo o reintentar. No ofrece
 reporte básico como si fuera IA. La API conserva el respaldo de reglas para sus
 consumidores anteriores, con un origen explícito.
 
-Se redujo la generación a un máximo de 3 riesgos, 2 indicadores solicitados y 3
-referencias por norma. Se usan hasta 4 fragmentos ISO de 2.200 caracteres, hasta 3
-artículos legales de 1.800 caracteres y, cuando se recupera consentimiento, el
-artículo 14 para contextualizar excepciones. Se informa el truncamiento. El contexto
-de Ollama es de 12.288 tokens, la salida máxima de 4.000, temperatura 0 y permanencia
-del modelo en memoria de 10 minutos. Esto limita trabajo y repeticiones; la latencia
-real depende del modelo, CPU/GPU y memoria, y no se garantiza un tiempo fijo.
+Se solicitan hasta 3 riesgos distintos, 2 indicadores y 3 referencias por tipo.
+Cada riesgo incluye evidencia literal del escenario, amenaza, vulnerabilidad,
+daño potencial, medida concreta, prioridad y criterio de cierre verificable.
+Se usan hasta 4 fragmentos ISO de 2.200 caracteres, hasta 3 artículos legales de
+1.800 caracteres (más excepciones al consentimiento cuando corresponde) y hasta
+5 fragmentos RAG, con un máximo de 2 por archivo.
 
-Se incluye el contrato JSON tanto en `format` como en el prompt, siguiendo la
-[documentación de Ollama](https://docs.ollama.com/capabilities/structured-outputs).
-Una respuesta mal formada o truncada permite un único reintento con un contrato
-breve (informe narrativo, riesgos, hechos y medidas), de hasta 1.800 tokens de salida.
-Ese informe sigue siendo generado por IA y se identifica como `formato_ia: "breve"`;
-no incluye valoración numérica de IA, indicadores ni referencias normativas verificadas.
-Las cifras y referencias no se reconstruyen mediante reglas. No se
-repiten automáticamente errores de conexión ni timeouts. En el peor caso dos
-solicitudes pueden consumir aproximadamente dos veces el timeout configurado.
-La pantalla muestra tiempo transcurrido y espera el análisis completo, sin streaming.
+Ollama recibe el contrato JSON mediante `format`, un contexto de 12.288 tokens,
+un máximo de 5.200 tokens de salida y temperatura 0. El esquema no se duplica en
+el prompt. Para Qwen 3/3.5 se desactiva el razonamiento previo con `think: false`,
+se usa temperatura 0,2, penalización de presencia 0 y hasta 3.600 tokens de salida.
+El contrato limita hechos citables y referencias a las fuentes de cada solicitud;
+se conserva la validación posterior. Ante formato o evidencia inválidos se permite un reintento detallado
+que conserva los documentos y explica el error. No se repiten errores de conexión
+ni timeouts. Por compatibilidad todavía se admite una respuesta breve válida en
+el segundo intento, identificada sin cifras ni referencias normativas verificadas.
+Dos intentos pueden consumir aproximadamente dos veces el timeout configurado.
+La interfaz muestra tiempo transcurrido y espera la respuesta sin streaming.
+
+El RAG combina búsqueda semántica con FAISS y puntuación de términos BM25,
+filtra fragmentos breves y diversifica fuentes. Requiere `requirements-rag.txt`,
+el modelo `embeddinggemma` y ejecutar `python -m rag.indexar`. El índice versión 2
+usa prefijos distintos para documentos y consultas. Un índice anterior se rechaza
+con una indicación para regenerarlo. El reporte y la interfaz muestran las citas
+RAG cotejadas, su aplicación propuesta, archivo, página y extractos recuperados.
 
 ## Conocimiento documental y controles específicos
 
@@ -97,7 +104,7 @@ Su texto no está incorporado a esta versión: no se inventan artículos del nue
 reglamento ni se certifica actualidad de todo el Markdown del usuario.
 
 La selección temática y el catálogo son parciales; una lista vacía no demuestra
-cumplimiento. No hay embeddings, FAISS ni búsqueda semántica.
+cumplimiento. El RAG semántico complementa esta selección temática; no la convierte en exhaustiva.
 Fuente del catálogo de códigos/temas:
 [BSI, revisión 2025, páginas 24–32](https://www.bsigroup.com/siteassets/pdf/th-th/products-and-services/th-as-cross-lg-ict-dt-iso27701-mp-iso27701revisionwebinar-1125.pdf).
 Los temas españoles son resúmenes propios.
@@ -126,6 +133,9 @@ La respuesta conserva los campos anteriores y añade:
 
 - `referencias_ley`: relaciones con artículos y citas verificadas.
 - `documentacion_ley`: estado, artículos recuperados y huella documental.
+- `referencias_rag`: citas cotejadas y su relación propuesta con cada riesgo.
+- `fuentes_rag`: fragmentos recuperados con ID, archivo, página y texto.
+- `estado_rag`: disponibilidad del índice y resultado de recuperación.
 - `reporte_texto`: reporte completo listo para exportar.
 - `reporte_ia_generado`: true únicamente cuando el análisis proviene del modelo.
 
@@ -158,12 +168,14 @@ Verificación automatizada:
 node --check static/js/app.js
 ```
 
-La suite completa requiere los documentos locales indicados arriba, incluido el
-OCR ISO original que no se distribuye con el código.
+Las pruebas ISO utilizan un documento sintético temporal, sin reproducir ni
+requerir el documento privado. La aplicación sigue necesitando una copia
+autorizada real para emitir referencias ISO; los datos de prueba no se cargan
+fuera de los tests. Las pruebas del RAG requieren las dependencias opcionales.
 
-50 pruebas aprobadas: recuperación de documentos, citas inventadas, roles,
-reporte con ley, valoración, selección de modelo, API estricta y compatible,
-recuperación de informe breve, rechazo de hechos inventados y errores de red. Las respuestas LLM están simuladas.
-En la revisión del 19 de octubre de 2026 no se pudo conectar con Ollama local;
-no se verificó inferencia real. Usa `comprobar_ia.py`
-en tu terminal para verificar el modelo y su latencia real.
+Consulta [la validación de esta entrega](../docs/CALIDAD_REPORTES_RAG.md).
+Para repetir la evaluación real con un escenario ficticio:
+
+```bash
+.venv/bin/python comprobar_ia.py --entrada ejemplo_calidad_rag.json
+```

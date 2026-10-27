@@ -24,7 +24,9 @@ def main():
             return 1
         args.salida.write_text(resultado['reporte_texto'], encoding='utf-8')
         print('Reporte de IA guardado en ' + str(args.salida.resolve()))
-        print(f"Referencias verificadas: ISO {len(resultado['referencias_iso'])}; ley {len(resultado['referencias_ley'])}")
+        print(f"Referencias verificadas: ISO {len(resultado['referencias_iso'])}; "
+              f"ley {len(resultado['referencias_ley'])}; RAG {len(resultado['referencias_rag'])}")
+        print('RAG: ' + resultado['estado_rag'])
         return 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(str(exc), file=sys.stderr)
