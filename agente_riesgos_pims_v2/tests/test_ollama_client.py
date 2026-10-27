@@ -28,7 +28,7 @@ ANALISIS = {
 class TestOllamaClient(unittest.TestCase):
     def setUp(self):
         env = patch.dict("os.environ", {"OLLAMA_URL": "http://127.0.0.1:11434",
-                                       "OLLAMA_MODEL": "qwen2.5:3b", "OLLAMA_TIMEOUT": "120"})
+                                       "OLLAMA_MODEL": "qwen3.5:4b-q4_K_M", "OLLAMA_TIMEOUT": "120"})
         env.start()
         self.addCleanup(env.stop)
         parche = patch("llm.ollama_client.requests.Session")
@@ -37,6 +37,14 @@ class TestOllamaClient(unittest.TestCase):
         self.response = self.session.request.return_value
         self.response.status_code = 200
         self.response.json.return_value = {"message": {"content": json.dumps(ANALISIS)}, "done": True}
+
+    def test_presupuestos_invalidos_se_rechazan(self):
+        for entorno in ({'OLLAMA_NUM_CTX': '0'}, {'OLLAMA_NUM_PREDICT': '-1'},
+                        {'OLLAMA_NUM_CTX': 'texto'},
+                        {'OLLAMA_NUM_CTX': '4096', 'OLLAMA_NUM_PREDICT': '4096'}):
+            with self.subTest(entorno=entorno), patch.dict('os.environ', entorno):
+                with self.assertRaises(ValueError):
+                    obtener_configuracion()
 
     def test_chat_json_y_contexto(self):
         resultado = analizar_con_ollama({"descripcion": "Datos sin control de acceso", "puntaje": 16, "nivel": "Alto", "categorias": ["Salud"]})
@@ -79,7 +87,7 @@ class TestOllamaClient(unittest.TestCase):
             with self.subTest(codigo=codigo), self.assertRaises(OllamaError) as cm:
                 analizar_con_ollama({})
             if codigo == 404:
-                self.assertIn("ollama pull qwen2.5:3b", str(cm.exception))
+                self.assertIn("ollama pull qwen3.5:4b-q4_K_M", str(cm.exception))
 
     def test_respuesta_http_invalida(self):
         self.response.json.side_effect = ValueError("JSON inválido")
@@ -92,10 +100,10 @@ class TestOllamaClient(unittest.TestCase):
                 analizar_con_ollama({})
 
     def test_status_modelo_instalado_y_ausente(self):
-        self.response.json.return_value = {"models": [{"name": "qwen2.5:3b"}]}
+        self.response.json.return_value = {"models": [{"name": "qwen3.5:4b-q4_K_M"}]}
         estado = consultar_estado()
         self.assertTrue(estado["ollama"])
-        self.assertEqual(estado["modelos_instalados"], ["qwen2.5:3b"])
+        self.assertEqual(estado["modelos_instalados"], ["qwen3.5:4b-q4_K_M"])
         self.assertEqual(estado["timeout_segundos"], 120)
         self.response.json.return_value = {"models": []}
         estado = consultar_estado()

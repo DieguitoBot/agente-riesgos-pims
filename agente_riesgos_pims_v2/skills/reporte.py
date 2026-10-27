@@ -12,6 +12,10 @@ def generar_reporte(r):
               'Datos: ' + (', '.join(r['categorias']) or 'No declarados'),
               '\nVALORACIÓN DEL USUARIO',
               f"Probabilidad {r['probabilidad']}/5 · Impacto {r['impacto']}/5 · {r['puntaje']}/25 · {r['nivel']}"]
+    if ia:
+        revision = ['BORRADOR DE IA — requiere revisión de contenido. Las citas cotejadas no validan las inferencias.']
+        revision.extend(r.get('alertas_contenido', []))
+        partes[1:1] = revision
     opinion = r['valoracion_ia']
     partes.append('\nVALORACIÓN DE LA IA')
     if opinion:

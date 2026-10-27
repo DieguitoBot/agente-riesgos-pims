@@ -30,7 +30,7 @@ py -3 -m venv .venv
 
 El lanzador muestra la dirección local y abre el navegador. Comprueba los modelos
 con `ollama list`; si no hay servicio, ejecuta `ollama serve` en otra terminal.
-El modelo predeterminado es `qwen2.5:3b`; puedes elegir uno ya instalado en la web.
+El modelo predeterminado es `qwen3.5:4b-q4_K_M`; puedes elegir uno ya instalado en la web.
 El proyecto no descarga modelos automáticamente. No carga archivos `.env`.
 
 ## Activar el RAG
@@ -38,7 +38,7 @@ El proyecto no descarga modelos automáticamente. No carga archivos `.env`.
 Con Ollama iniciado, desde `agente_riesgos_pims_v2/`:
 
 ```bash
-ollama pull qwen2.5:3b
+ollama pull qwen3.5:4b-q4_K_M
 ollama pull embeddinggemma
 .venv/bin/python -m rag.indexar
 .venv/bin/python comprobar_ia.py --entrada ejemplo_calidad_rag.json

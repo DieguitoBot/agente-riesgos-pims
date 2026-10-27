@@ -96,7 +96,7 @@ def seleccionar(consulta, fragmentos, semanticos, k):
             for n, (i, _) in enumerate(elegidos, 1)]
 
 
-def recuperar_contexto_rag(consulta, k=5, carpeta=INDICE):
+def recuperar_contexto_rag(consulta, k=12, carpeta=INDICE):
     try:
         configuracion = json.loads((Path(carpeta) / "configuracion.json").read_text(encoding="utf-8"))
         if (configuracion.get("version") != VERSION_INDICE

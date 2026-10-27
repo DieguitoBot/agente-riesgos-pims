@@ -1,18 +1,14 @@
 """Cliente HTTP de Ollama. No instala, descarga ni ejecuta modelos."""
 import json
+import logging
 
 import requests
 
 from config import obtener_configuracion, obtener_modelo
-from prompts.riesgo_prompt import ESQUEMA_ANALISIS, construir_esquema, construir_mensajes, objeto, TEXTO
+from prompts.riesgo_prompt import ESQUEMA_ANALISIS, construir_esquema, construir_mensajes
 
-
-ESQUEMA_BREVE = objeto({
-    'informe': TEXTO,
-    'riesgos': {'type': 'array', 'maxItems': 3, 'items': objeto({
-        'riesgo': TEXTO, 'evidencia': TEXTO, 'medida': TEXTO,
-    })},
-})
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class OllamaError(Exception):
@@ -65,7 +61,7 @@ def _validar_campo(valor, esquema, ruta):
         return {k: _validar_campo(valor[k], sub, ruta + '.' + k)
                 for k, sub in esquema['properties'].items() if k in valor}
     if tipo == 'array':
-        if not isinstance(valor, list) or len(valor) > esquema.get('maxItems', 100):
+        if not isinstance(valor, list) or ('maxItems' in esquema and len(valor) > esquema['maxItems']):
             raise OllamaError(f'Ollama devolvió una lista inválida en {ruta}.')
         return [_validar_campo(v, esquema['items'], ruta) for v in valor]
     if tipo == 'integer':
@@ -109,22 +105,51 @@ def recuperar_analisis(texto):
     return validar_analisis(datos)
 
 
+def validar_vinculos_documentales(analisis, contexto):
+    """Pide reparación antes de que el reporte pierda citas inválidas al filtrarse."""
+    riesgos = {r['riesgo'] for r in analisis['riesgos_identificados']}
+    descripcion = ' '.join(contexto.get('descripcion', '').casefold().split())
+    for campo, origen, identificador, clave, cita_campo, maximo in (
+            ('referencias_rag', 'contexto_rag', 'fuente_id', 'id', 'cita', 240),
+            ('referencias_ley', 'contexto_legal', 'articulo', 'articulo', 'cita_normativa', 160),
+            ('referencias_iso', 'contexto_documental', 'control', 'control', 'cita_normativa', 160)):
+        fuentes = {f[clave]: f for f in contexto.get(origen, {}).get('fragmentos', [])}
+        for ref in analisis.get(campo, []):
+            fuente = fuentes.get(ref[identificador])
+            cita = ' '.join(ref[cita_campo].split())
+            evidencia = ' '.join(ref['evidencia'].casefold().split())
+            motivo = None
+            if not fuente:
+                motivo = 'fuente no recuperada'
+            elif not 20 <= len(cita) <= maximo or cita not in ' '.join(fuente['texto'].split()):
+                motivo = 'la cita no pertenece a la fuente o tiene una longitud inválida'
+            elif ref['riesgo'] not in riesgos:
+                motivo = 'el nombre del riesgo no coincide con los riesgos identificados'
+            elif len(evidencia) < 8 or evidencia not in descripcion:
+                motivo = 'la evidencia no es literal del escenario'
+            if motivo:
+                raise OllamaError(f"Referencia inválida en {campo}: {ref[identificador]}. "
+                                  f"Motivo: {motivo}. "
+                                  "Selecciona una cita literal de ESA fuente y usa el nombre exacto "
+                                  "del riesgo y evidencia literal del escenario; omítela si no aplica.")
+
+
 def analizar_con_ollama(contexto):
     config = _configuracion(contexto.get('modelo_solicitado'))
     mensajes = construir_mensajes(contexto)
     # Repetir solo errores de formato; un timeout no provoca otra espera completa.
     for intento in range(2):
+        logger.info('Generando análisis con %s (intento %s/2).', config['modelo'], intento + 1)
         solicitud = {
             "model": config["modelo"], "messages": mensajes,
             "stream": False, "format": construir_esquema(contexto),
-            "options": {"temperature": 0, "num_predict": 5200, "num_ctx": 12288},
+            "options": {"temperature": 0, "num_predict": config["num_predict"], "num_ctx": config["num_ctx"]},
             "keep_alive": "10m",
         }
         if config['modelo'].split(':')[0] in ('qwen3', 'qwen3.5'):
             # Evitar que el presupuesto se consuma en razonamiento previo al JSON.
             solicitud['think'] = False
-            solicitud['options'].update(temperature=0.2, presence_penalty=0,
-                                        num_predict=3600)
+            solicitud['options'].update(temperature=0.2, presence_penalty=0)
         respuesta = _solicitar("POST", "/api/chat", config, json=solicitud)
         try:
             if not isinstance(respuesta, dict) or respuesta.get("done") is False:
@@ -134,24 +159,18 @@ def analizar_con_ollama(contexto):
             mensaje = respuesta.get("message")
             if not isinstance(mensaje, dict):
                 raise OllamaError("Ollama devolvió una respuesta sin mensaje válido.")
-            try:
-                analisis = recuperar_analisis(mensaje.get("content"))
-                descripcion = " ".join(contexto.get("descripcion", "").casefold().split())
-                for riesgo in analisis['riesgos_identificados']:
-                    evidencia = " ".join(riesgo['evidencia'].casefold().split())
-                    if len(evidencia) < 8 or evidencia not in descripcion:
-                        raise OllamaError("Un riesgo contiene evidencia que no aparece literalmente en el escenario: "
-                                          + json.dumps(riesgo['evidencia'], ensure_ascii=False)
-                                          + ". Copia un tramo continuo del escenario, sin resumirlo ni añadir palabras.")
-                return analisis
-            except OllamaError as error_detallado:
-                if not intento:
-                    raise
-                try:
-                    return recuperar_informe_breve(mensaje.get("content"), contexto)
-                except OllamaError:
-                    raise error_detallado
+            analisis = recuperar_analisis(mensaje.get("content"))
+            descripcion = " ".join(contexto.get("descripcion", "").casefold().split())
+            for riesgo in analisis['riesgos_identificados']:
+                evidencia = " ".join(riesgo['evidencia'].casefold().split())
+                if len(evidencia) < 8 or evidencia not in descripcion:
+                    raise OllamaError("Un riesgo contiene evidencia que no aparece literalmente en el escenario: "
+                                      + json.dumps(riesgo['evidencia'], ensure_ascii=False)
+                                      + ". Copia un tramo continuo del escenario, sin resumirlo ni añadir palabras.")
+            validar_vinculos_documentales(analisis, contexto)
+            return analisis
         except OllamaError as exc:
+            logger.warning('El intento %s no superó la validación: %s', intento + 1, exc)
             if intento:
                 raise OllamaError(f"No se obtuvo un análisis válido tras dos intentos: {exc}") from exc
             # Reparar el contrato conservando las fuentes; no degradar a un informe sin RAG.
@@ -161,31 +180,6 @@ def analizar_con_ollama(contexto):
                     + " Usa evidencia literal del escenario, todos los campos del contrato y listas vacías"
                     + " cuando no haya sustento. Mantén las fuentes anteriores. Evita repeticiones."
             }]
-
-
-def recuperar_informe_breve(texto, contexto):
-    if not isinstance(texto, str):
-        raise OllamaError('El informe breve no contiene texto.')
-    try:
-        inicio = texto.find('{')
-        if inicio < 0:
-            raise ValueError('Sin JSON')
-        datos, _ = json.JSONDecoder().raw_decode(texto[inicio:])
-    except ValueError as exc:
-        raise OllamaError('El informe breve no contiene JSON válido.') from exc
-    datos = _validar_campo(datos, ESQUEMA_BREVE, 'informe breve')
-    riesgos = []
-    for item in datos['riesgos']:
-        if item['evidencia'].casefold() not in contexto.get('descripcion', '').casefold():
-            raise OllamaError('El informe breve contiene un hecho no presente en el escenario.')
-        riesgos.append(dict(riesgo=item['riesgo'], evidencia=item['evidencia'],
-                            explicacion='Desarrollo en la justificación del informe breve.',
-                            medida_concreta=item['medida']))
-    return dict(riesgos_identificados=riesgos, consecuencias=[], justificacion=datos['informe'],
-                recomendaciones=[i['medida'] for i in datos['riesgos']],
-                opinion_llm=None,
-                referencias_iso=[], referencias_ley=[], indicadores_riesgo=[], formato_ia='breve')
-
 
 
 def consultar_estado():

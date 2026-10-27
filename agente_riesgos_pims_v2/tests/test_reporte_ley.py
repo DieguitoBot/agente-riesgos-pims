@@ -100,7 +100,7 @@ class TestReporteLey(unittest.TestCase):
                 analizar_con_ollama({})
             self.assertEqual(req.call_count, 2)
 
-    def test_informe_breve_rescata_reporte_de_ia_sin_inventar_valoracion(self):
+    def test_informe_breve_no_sustituye_el_reporte_completo(self):
         breve = dict(informe='La ausencia de roles expone los datos a consultas indebidas. Definir roles y probar el rechazo de accesos.',
                      riesgos=[dict(riesgo='Acceso no autorizado', evidencia='sin control de acceso', medida='Definir y probar roles de acceso.')])
         with patch('llm.ollama_client.requests.Session') as session:
@@ -109,14 +109,8 @@ class TestReporteLey(unittest.TestCase):
             req.return_value.json.side_effect = [{'message': {'content': '{}'}},
                                                 {'message': {'content': json.dumps(breve)}}]
             r = app.test_client().post('/api/evaluar', json=dict(self.datos, exigir_ia=True))
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(r.json['reporte_ia_generado'])
-        self.assertEqual(r.json['formato_ia'], 'breve')
-        self.assertIsNone(r.json['valoracion_ia'])
-        self.assertEqual(r.json['referencias_ley'], [])
-        self.assertEqual(r.json['referencias_iso'], [])
-        self.assertIn(breve['informe'], r.json['reporte_texto'])
-        self.assertIn('Informe breve', r.json['mensaje'])
+        self.assertEqual(r.status_code, 503)
+        self.assertNotIn('reporte_texto', r.json)
         self.assertEqual(req.call_count, 2)
 
     def test_informe_breve_con_hechos_inventados_no_se_publica(self):
