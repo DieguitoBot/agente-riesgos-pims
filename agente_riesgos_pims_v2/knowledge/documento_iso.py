@@ -30,6 +30,9 @@ def normalizar(texto):
 
 
 def leer_secciones(ruta=None):
+    if ruta is None:
+        from db.repositorio import leer_norma
+        return leer_norma("iso")
     texto = (ruta or DOCUMENTO).read_text(encoding='utf-8')
     lineas = texto.splitlines()
     # Limitar al cuerpo del anexo B: excluir índices y tablas de correspondencia.
@@ -62,7 +65,7 @@ def recuperar_contexto(descripcion, rol):
         secciones, huella = leer_secciones()
     except (OSError, UnicodeError, StopIteration):
         return dict(estado='no_disponible', fragmentos=[], sha256=None,
-                    mensaje='No se pudo leer el Markdown ISO. No hay sustento documental local disponible.')
+                    mensaje='No se pudo consultar la ISO en PostgreSQL. No hay sustento documental disponible.')
     texto = normalizar(descripcion)
     candidatos = []
     for codigo, control in catalogo_para_rol(rol).items():

@@ -13,6 +13,13 @@ from tests.test_ollama_client import ANALISIS
 
 class TestReporteLey(unittest.TestCase):
     def setUp(self):
+        from db.repositorio import leer_norma
+        from knowledge.documento_ley import DOCUMENTO
+        articulos = leer_articulos(DOCUMENTO)
+        parche = patch('db.repositorio.leer_norma', side_effect=lambda tipo:
+                       articulos if tipo == 'ley' else leer_norma(tipo))
+        parche.start()
+        self.addCleanup(parche.stop)
         self.analisis = copy.deepcopy(ANALISIS)
         self.datos = dict(descripcion='La universidad almacena datos sin control de acceso.',
                           probabilidad=3, impacto=4)

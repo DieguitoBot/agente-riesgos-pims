@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify, Response, make_respo
 from knowledge.documento_iso import leer_secciones
 from knowledge.documento_ley import leer_articulos, AVISO
 from knowledge.controles_iso import CONTROLES
+from db.repositorio import inventario, BaseNoDisponible
 from llm.ollama_client import consultar_estado
 from skills.evaluacion_riesgo import evaluar_riesgo
 
@@ -22,6 +23,14 @@ def inicio():
     respuesta = make_response(render_template("index.html", versiones=versiones))
     respuesta.cache_control.no_store = True
     return respuesta
+
+
+@app.get('/api/documentos')
+def api_documentos():
+    try:
+        return jsonify(almacenamiento='PostgreSQL', documentos=inventario())
+    except BaseNoDisponible:
+        return jsonify(error='Base documental no disponible.'), 503
 
 
 @app.route("/api/status")
@@ -62,7 +71,7 @@ def fuente_iso(codigo):
     except (OSError, UnicodeError, StopIteration):
         fragmento = None
     if not fragmento:
-        return jsonify(error='Sección no disponible en el Markdown local.'), 404
+        return jsonify(error='Sección no disponible en PostgreSQL.'), 404
     texto = (f"Fuente: {fragmento['archivo']} · página OCR {fragmento['pagina']} · línea {fragmento['linea']}\n"
              f"SHA256: {huella}\nTexto OCR aportado por el usuario, pendiente de cotejo con el PDF.\n\n"
              + fragmento['texto'])
@@ -78,7 +87,7 @@ def fuente_ley(numero):
     except (OSError, UnicodeError):
         articulo = None
     if not articulo:
-        return jsonify(error='Artículo no disponible en el Markdown local.'), 404
+        return jsonify(error='Artículo no disponible en PostgreSQL.'), 404
     return Response(f"Fuente: {articulo['archivo']} · línea {articulo['linea']}\nSHA256: {huella}\n{AVISO}\n\n{articulo['texto']}",
                     content_type='text/plain; charset=utf-8', headers={'X-Content-Type-Options': 'nosniff'})
 

@@ -157,7 +157,7 @@ def _evaluar_con_reglas(descripcion, probabilidad, impacto, categorias=None):
         "riesgos_identificados": riesgos,
         "justificacion": justificacion,
         "recomendaciones": recomendaciones,
-        "estado_rag": "RAG y embeddings pendientes; FAISS por confirmar."
+        "estado_rag": "Consulta documental PostgreSQL pendiente."
     }
 
 

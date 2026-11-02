@@ -23,6 +23,9 @@ AVISO = ('Texto aportado por el usuario, pendiente de cotejo con una versión of
 
 
 def leer_articulos(ruta=None):
+    if ruta is None:
+        from db.repositorio import leer_norma
+        return leer_norma("ley")
     ruta = ruta or DOCUMENTO
     texto = ruta.read_text(encoding='utf-8')
     lineas = texto.splitlines()

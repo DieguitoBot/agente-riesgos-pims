@@ -22,6 +22,9 @@ def instalar_iso_sintetico(caso):
     ruta.write_text('## Annex B\n<!-- Page 48 -->\n' + '\n'.join(
         f'{titulo}\nControl\n{texto}\nImplementation guidance\nTest content.\n'
         for titulo, texto in secciones) + '\n## Annex C\n', encoding='utf-8')
-    parche = patch('knowledge.documento_iso.DOCUMENTO', ruta)
+    from knowledge.documento_iso import leer_secciones
+    from db.repositorio import leer_norma
+    parche = patch('db.repositorio.leer_norma', side_effect=lambda tipo:
+                   leer_secciones(ruta) if tipo == 'iso' else leer_norma(tipo))
     parche.start()
     caso.addCleanup(parche.stop)

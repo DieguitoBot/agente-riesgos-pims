@@ -9,8 +9,8 @@ import unicodedata
 
 from requests import RequestException
 from rag.embeddings import generar_embedding
-from rag.faiss_store import cargar_indice, buscar
-from rag.indexar import INDICE, VERSION_INDICE
+INDICE = Path(__file__).resolve().parent / "indice_local"
+VERSION_INDICE = 2
 
 VACIAS = set("una uno unos unas los las del para por con sin que como esta este estos estas sus sobre entre desde hasta mediante tiene son fue hay ser se de la el en y o a al un es su no lo mas universidad estudiantes datos".split())
 TEMAS = [
@@ -66,7 +66,9 @@ def seleccionar(consulta, fragmentos, semanticos, k):
     indices = {clave(f): i for i, f in enumerate(fragmentos)}
     rangos_sem, similitudes = {}, {}
     for rango, f in enumerate(semanticos, 1):
-        i = indices[clave(f)]
+        i = indices.get(clave(f))
+        if i is None or fragmentos[i]['texto'] != f['texto']:
+            continue  # Una migración concurrente pudo cambiar el corpus.
         rangos_sem[i] = rango
         similitudes[i] = f["similitud"]
     orden_lex = sorted(range(len(fragmentos)), key=lambda i: lexicos[i], reverse=True)
@@ -96,7 +98,8 @@ def seleccionar(consulta, fragmentos, semanticos, k):
             for n, (i, _) in enumerate(elegidos, 1)]
 
 
-def recuperar_contexto_rag(consulta, k=12, carpeta=INDICE):
+def recuperar_contexto_archivo(consulta, k=12, carpeta=INDICE):
+    from rag.faiss_store import cargar_indice, buscar
     try:
         configuracion = json.loads((Path(carpeta) / "configuracion.json").read_text(encoding="utf-8"))
         if (configuracion.get("version") != VERSION_INDICE
@@ -117,3 +120,44 @@ def recuperar_contexto_rag(consulta, k=12, carpeta=INDICE):
         return dict(estado="error", fragmentos=[], mensaje="No fue posible recuperar el contexto documental.")
     return dict(estado="recuperado" if datos else "sin_coincidencias", fragmentos=datos,
                 mensaje="Selección por similitud y términos; verificar fuente, vigencia y aplicabilidad.")
+
+
+def recuperar_contexto_rag(consulta, k=12, carpeta=None):
+    # Una ruta explícita se reserva para herramientas y pruebas del índice histórico.
+    if carpeta is not None:
+        return recuperar_contexto_archivo(consulta, k, carpeta)
+    from db.repositorio import leer_fragmentos, BaseNoDisponible
+    try:
+        fragmentos = leer_fragmentos()
+        semanticos = []
+        metodo = 'términos BM25 sobre PostgreSQL'
+        if os.getenv('PIMS_BUSQUEDA_SEMANTICA', '1') == '1':
+            from db.repositorio import leer_vectores
+            vectores = leer_vectores(os.getenv('RAG_EMBED_MODEL', 'embeddinggemma'))
+            if vectores:
+                try:
+                    consulta_vector = generar_embedding(ampliar_consulta(consulta))
+                    norma = math.sqrt(sum(v*v for v in consulta_vector))
+                    if not norma or not math.isfinite(norma):
+                        raise ValueError('Vector de consulta inválido')
+                    for fuente, vector in vectores:
+                        if len(vector) != len(consulta_vector):
+                            continue
+                        denominador = norma * math.sqrt(sum(v*v for v in vector))
+                        if denominador and math.isfinite(denominador):
+                            score = sum(a*b for a,b in zip(consulta_vector, vector))/denominador
+                            semanticos.append(dict(fuente, similitud=round(score, 4)))
+                    semanticos.sort(key=lambda f: f['similitud'], reverse=True)
+                    semanticos = semanticos[:30]
+                    if semanticos:
+                        metodo = 'semántica + términos sobre PostgreSQL'
+                except (RequestException, OSError, ValueError, RuntimeError):
+                    metodo = 'términos BM25 sobre PostgreSQL (embeddings no disponibles)'
+        datos = seleccionar(ampliar_consulta(consulta), fragmentos, semanticos, k)
+        for dato in datos:
+            dato['metodo'] = metodo
+    except BaseNoDisponible:
+        return dict(estado='base_no_disponible', fragmentos=[],
+                    mensaje='No se pudo consultar PostgreSQL. Configura y migra la base del agente.')
+    return dict(estado='recuperado' if datos else 'sin_coincidencias', fragmentos=datos,
+                mensaje=metodo + '; verificar fuente, vigencia y aplicabilidad.')

@@ -25,3 +25,7 @@ ISO_IEC_27701_2025.md
 
 # Índices vectoriales generados en cada equipo
 agente_riesgos_pims_v2/rag/indice_local/
+
+# PostgreSQL exclusivo y copias privadas
+.datos/
+*.dump
