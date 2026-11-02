@@ -15,6 +15,13 @@ def preparar():
     if not python.exists() or not paquetes:
         raise SystemExit('Instala pgadmin4 en .datos/pgadmin-venv antes de iniciar.')
     paquete = paquetes[0]
+    generados = paquete / 'pgadmin/static/js/generated'
+    requeridos = ('style.css','vendor.react.js','vendor.main.js','vendor.others.js',
+                  'vendor.sqleditor.js','pgadmin_commons.js','app.bundle.js','browser_nodes.js')
+    faltantes = [nombre for nombre in requeridos if not (generados / nombre).is_file()]
+    if faltantes:
+        raise SystemExit('La instalación de pgAdmin está incompleta: faltan recursos de interfaz: '
+                         + ', '.join(faltantes) + '. Consulta db/OPERACION.txt antes de iniciar.')
     estado = DATOS / 'pgadmin'
     estado.mkdir(mode=0o700, exist_ok=True)
     configuracion = {
