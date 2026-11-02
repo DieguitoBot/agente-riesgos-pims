@@ -92,3 +92,17 @@ Para reinstalar pgAdmin sin cambiar las dependencias del agente:
   python3 -m venv ../.datos/pgadmin-venv
   ../.datos/pgadmin-venv/bin/pip install --no-cache-dir pgadmin4==9.19
   ./abrir_pgadmin.sh
+
+REPARACIÓN DE INTERFAZ (02/11/2026)
+El wheel 9.19 instalado no incluía pgadmin/static/js/generated. El servidor
+respondía, pero el navegador quedaba cargando por errores 404 de JavaScript/CSS.
+Se restauraron 49 archivos compilados del paquete oficial de Ubuntu de la misma
+versión, sin instalar servicios del sistema ni alterar PostgreSQL.
+Paquete conservado en ../.datos/pgadmin-reparacion/pgadmin4-web.deb
+Origen: https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/jammy/dists/pgadmin4/main/binary-amd64/pgadmin4-server_9.19-1.jammy_amd64.deb
+Solo se extrajo usr/pgadmin4/web/pgadmin/static/js/generated dentro del entorno
+privado. El lanzador comprueba ahora los archivos principales antes de iniciar.
+Si se reinstala desde pip, comprobar que estos recursos estén incluidos antes
+de dar la instalación por terminada. La descarga de un wheel por sí sola no
+resuelve la ausencia de esos archivos en esta versión.
+Tras reparar, recargar http://127.0.0.1:5050/browser/ con Ctrl+Shift+R.
