@@ -1,32 +1,38 @@
-"""Indexa los documentos autorizados: python -m rag.indexar."""
+"""Genera embeddings en PostgreSQL: python -m rag.indexar. No escribe índices en disco."""
 import os
-import json
+import math
 from pathlib import Path
-from rag.documentos import leer_documentos
+from psycopg.types.json import Jsonb
+from db.repositorio import conectar
 from rag.embeddings import generar_embeddings
-from rag.faiss_store import crear_indice, guardar_indice
 
+# Compatibilidad para herramientas que inspeccionan el índice histórico.
 BASE = Path(__file__).resolve().parents[1]
-DOCUMENTOS = BASE / "knowledge" / "documentos"
-INDICE = BASE / "rag" / "indice_local"
+INDICE = BASE / 'rag/indice_local'
 VERSION_INDICE = 2
 
 
-def indexar(carpeta=DOCUMENTOS, destino=INDICE):
-    fragmentos = leer_documentos(carpeta)
-    if not fragmentos:
-        raise ValueError("No hay textos indexables en knowledge/documentos.")
-    lote = max(1, int(os.getenv("RAG_BATCH", "12")))
-    vectores = []
-    for i in range(0, len(fragmentos), lote):
-        vectores.extend(generar_embeddings([f["texto"] for f in fragmentos[i:i + lote]]))
-        print(f"Indexando: {min(i + lote, len(fragmentos))}/{len(fragmentos)}", flush=True)
-    guardar_indice(crear_indice(vectores), fragmentos, destino)
-    (Path(destino) / "configuracion.json").write_text(json.dumps({
-        "version": VERSION_INDICE, "modelo": os.getenv("RAG_EMBED_MODEL", "embeddinggemma")
-    }), encoding="utf-8")
-    return len(fragmentos)
+def indexar():
+    modelo = os.getenv('RAG_EMBED_MODEL', 'embeddinggemma')
+    with conectar(admin=True) as con:
+        filas = con.execute("""SELECT id,datos FROM pims_riesgos.fragmentos WHERE tipo='rag'
+            AND (embedding IS NULL OR modelo_embedding IS DISTINCT FROM %s) ORDER BY id""", (modelo,)).fetchall()
+    lote = max(1, int(os.getenv('RAG_BATCH', '12')))
+    total = 0
+    for inicio in range(0,len(filas),lote):
+        grupo = filas[inicio:inicio+lote]
+        vectores = generar_embeddings([datos['texto'] for _,datos in grupo])
+        if len(vectores) != len(grupo):
+            raise ValueError('Embeddings incompletos.')
+        with conectar(admin=True) as con:
+            for (identificador,datos),vector in zip(grupo,vectores):
+                if not vector or any(not math.isfinite(v) for v in vector):
+                    raise ValueError('Embedding inválido.')
+                total += con.execute("""UPDATE pims_riesgos.fragmentos SET embedding=%s,modelo_embedding=%s
+                    WHERE id=%s AND datos=%s""", (vector,modelo,identificador,Jsonb(datos))).rowcount
+        print(f'Embeddings guardados en PostgreSQL: {total}/{len(filas)}', flush=True)
+    return total
 
 
-if __name__ == "__main__":
-    print("Fragmentos indexados:", indexar())
+if __name__ == '__main__':
+    print('Fragmentos indexados:', indexar())

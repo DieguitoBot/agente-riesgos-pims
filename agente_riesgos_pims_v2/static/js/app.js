@@ -191,7 +191,7 @@ function mostrarComplemento(contenido) {
             parrafo(tarjeta, `Rol: ${item.rol} · ${item.aplicabilidad}`);
             const enlace = document.createElement("a");
             enlace.href = item.fuente;
-            enlace.textContent = "Ver sección del Markdown utilizado";
+            enlace.textContent = "Ver fuente almacenada en PostgreSQL";
             enlace.target = "_blank";
             enlace.rel = "noopener noreferrer";
             tarjeta.appendChild(enlace);
