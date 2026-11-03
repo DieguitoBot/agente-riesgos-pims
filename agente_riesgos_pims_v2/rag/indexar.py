@@ -3,7 +3,7 @@ import os
 import math
 from pathlib import Path
 from psycopg.types.json import Jsonb
-from db.repositorio import conectar
+from db.repositorio import conectar, DATOS_FRAGMENTO_SQL
 from rag.embeddings import generar_embeddings
 
 # Compatibilidad para herramientas que inspeccionan el índice histórico.
@@ -15,8 +15,10 @@ VERSION_INDICE = 2
 def indexar():
     modelo = os.getenv('RAG_EMBED_MODEL', 'embeddinggemma')
     with conectar(admin=True) as con:
-        filas = con.execute("""SELECT id,datos FROM pims_riesgos.fragmentos WHERE tipo='rag'
-            AND (embedding IS NULL OR modelo_embedding IS DISTINCT FROM %s) ORDER BY id""", (modelo,)).fetchall()
+        filas = con.execute(f"""SELECT f.id, {DATOS_FRAGMENTO_SQL}
+            FROM pims_riesgos.fragmentos f WHERE f.tipo='rag'
+            AND (f.embedding IS NULL OR f.modelo_embedding IS DISTINCT FROM %s)
+            ORDER BY f.id""", (modelo,)).fetchall()
     lote = max(1, int(os.getenv('RAG_BATCH', '12')))
     total = 0
     for inicio in range(0,len(filas),lote):
@@ -28,8 +30,10 @@ def indexar():
             for (identificador,datos),vector in zip(grupo,vectores):
                 if not vector or any(not math.isfinite(v) for v in vector):
                     raise ValueError('Embedding inválido.')
-                total += con.execute("""UPDATE pims_riesgos.fragmentos SET embedding=%s,modelo_embedding=%s
-                    WHERE id=%s AND datos=%s""", (vector,modelo,identificador,Jsonb(datos))).rowcount
+                total += con.execute(f"""UPDATE pims_riesgos.fragmentos f
+                    SET embedding=%s,modelo_embedding=%s
+                    WHERE f.id=%s AND ({DATOS_FRAGMENTO_SQL})=%s""",
+                    (vector,modelo,identificador,Jsonb(datos))).rowcount
         print(f'Embeddings guardados en PostgreSQL: {total}/{len(filas)}', flush=True)
     return total
 

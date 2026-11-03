@@ -337,26 +337,71 @@ function mostrarTratamiento() {
     let visibles = 0;
     riesgos.forEach((item, indice) => {
         const codigo = `R-${String(indice + 1).padStart(2, "0")}`;
-        if (![codigo, item.riesgo, item.medida_concreta, item.prioridad]
+        if (![codigo, item.riesgo, item.medida_concreta, item.verificacion, item.prioridad]
             .some(valor => String(valor || "").toLocaleLowerCase("es").includes(consulta))) return;
         visibles++;
         const fila = document.createElement("tr");
-        const valores = [codigo, item.riesgo, item.prioridad || "Por definir",
-            item.medida_concreta || "Pendiente de definir",
-            item.verificacion || "Pendiente de definir",
-            item.medida_concreta ? "Propuesta · por revisar" : "Sin propuesta específica",
-            "Pendiente de reevaluación"];
-        valores.forEach(valor => {
+        fila.setAttribute("role", "row");
+        const riesgo = document.createElement("th");
+        riesgo.scope = "row";
+        riesgo.dataset.label = "Riesgo y prioridad";
+        riesgo.setAttribute("role", "rowheader");
+        const etiquetas = document.createElement("div");
+        etiquetas.className = "tratamiento-etiquetas";
+        const id = document.createElement("span");
+        id.className = "tratamiento-codigo";
+        id.textContent = codigo;
+        const prioridad = document.createElement("span");
+        prioridad.className = "tratamiento-prioridad";
+        const nivel = String(item.prioridad || "").toLocaleLowerCase("es");
+        if (["alta", "media", "baja"].includes(nivel)) prioridad.dataset.nivel = nivel;
+        prioridad.textContent = `Prioridad ${item.prioridad || "por definir"}`;
+        etiquetas.append(id, prioridad);
+        const nombre = document.createElement("p");
+        nombre.className = "tratamiento-riesgo";
+        nombre.textContent = item.riesgo;
+        riesgo.append(etiquetas, nombre);
+        if (item.evidencia) {
+            const contexto = document.createElement("details");
+            contexto.className = "tratamiento-contexto";
+            const titulo = document.createElement("summary");
+            titulo.textContent = "Ver hecho del escenario";
+            contexto.appendChild(titulo);
+            parrafo(contexto, item.evidencia);
+            riesgo.appendChild(contexto);
+        }
+        fila.appendChild(riesgo);
+        for (const [titulo, texto] of [
+            ["Medida propuesta", item.medida_concreta || "Pendiente de definir"],
+            ["Cómo verificar", item.verificacion || "Pendiente de definir"]
+        ]) {
             const celda = document.createElement("td");
-            celda.textContent = valor;
+            celda.dataset.label = titulo;
+            celda.setAttribute("role", "cell");
+            parrafo(celda, texto);
             fila.appendChild(celda);
-        });
+        }
+        const seguimiento = document.createElement("td");
+        seguimiento.dataset.label = "Seguimiento";
+        seguimiento.setAttribute("role", "cell");
+        const estado = document.createElement("span");
+        estado.className = "tratamiento-estado";
+        estado.textContent = item.medida_concreta ? "Por revisar" : "Sin propuesta específica";
+        seguimiento.appendChild(estado);
+        const residual = document.createElement("p");
+        residual.className = "tratamiento-residual";
+        residual.textContent = "Riesgo residual: pendiente de reevaluación.";
+        seguimiento.appendChild(residual);
+        fila.appendChild(seguimiento);
         cuerpo.appendChild(fila);
     });
     if (!visibles) {
         const fila = document.createElement("tr");
+        fila.setAttribute("role", "row");
         const celda = document.createElement("td");
-        celda.colSpan = 7;
+        celda.setAttribute("role", "cell");
+        celda.colSpan = 4;
+        celda.className = "tratamiento-sin-resultados";
         celda.textContent = riesgos.length ? "No hay propuestas que coincidan con la búsqueda."
             : "No se identificaron riesgos para desglosar. Revisa las recomendaciones generales.";
         fila.appendChild(celda);

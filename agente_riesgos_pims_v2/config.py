@@ -1,4 +1,4 @@
-"""Configuración local; se lee del entorno sin necesitar un archivo .env."""
+"""Configuración local; carga .env sin reemplazar variables del entorno."""
 import math
 import os
 from pathlib import Path

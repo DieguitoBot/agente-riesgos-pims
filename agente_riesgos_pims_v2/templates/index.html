@@ -179,16 +179,21 @@
             <section id="contenido-medidas" class="panel oculto">
                 <div class="titulo-panel"><h2>Tratamiento de riesgos · propuestas</h2><p>Revisa su aplicabilidad antes de implementarlas. Estas propuestas no representan controles ejecutados.</p></div>
                 <p class="aviso-tratamiento">Plan inicial para revisión humana. El nivel calculado corresponde al escenario completo; cada riesgo requiere valoración individual antes de medir su reducción.</p>
-                <label for="buscar-tratamiento">Buscar riesgo, medida o prioridad</label>
-                <input id="buscar-tratamiento" type="search" placeholder="Buscar en las propuestas…">
+                <div class="tratamiento-herramientas">
+                    <div class="tratamiento-busqueda">
+                        <label for="buscar-tratamiento">Buscar en el plan propuesto</label>
+                        <input id="buscar-tratamiento" type="search" placeholder="Código, riesgo, medida o verificación…" aria-controls="medidas-por-riesgo">
+                    </div>
+                    <p id="tratamiento-conteo" class="nota" role="status"></p>
+                </div>
                 <div class="tabla-contenedor" role="region" aria-label="Propuestas de tratamiento por riesgo" tabindex="0">
-                    <table class="tabla-tratamiento">
+                    <table class="tabla-tratamiento" role="table">
                         <caption>Propuestas de la evaluación actual · sin seguimiento persistente</caption>
-                        <thead><tr><th scope="col">Código</th><th scope="col">Riesgo</th><th scope="col">Prioridad propuesta</th><th scope="col">Control propuesto</th><th scope="col">Verificación</th><th scope="col">Estado</th><th scope="col">Riesgo residual</th></tr></thead>
-                        <tbody id="medidas-por-riesgo"></tbody>
+                        <colgroup><col class="columna-riesgo"><col class="columna-medida"><col class="columna-verificacion"><col class="columna-seguimiento"></colgroup>
+                        <thead role="rowgroup"><tr role="row"><th scope="col">Riesgo y prioridad</th><th scope="col">Medida propuesta</th><th scope="col">Cómo verificar</th><th scope="col">Seguimiento</th></tr></thead>
+                        <tbody id="medidas-por-riesgo" role="rowgroup"></tbody>
                     </table>
                 </div>
-                <p id="tratamiento-conteo" class="nota" role="status"></p>
                 <h3>Recomendaciones generales</h3>
                 <ul id="recomendaciones" class="lista-medidas"></ul>
             </section>

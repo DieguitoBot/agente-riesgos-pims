@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio PIMS · Planes de tratamiento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=versiones['css/style.css']) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/experimento.css', v=versiones['css/experimento.css']) }}">
+</head>
+<body>
+    <header class="barra-superior">
+        <a class="marca" href="/" aria-label="PIMS · Inicio"><span class="marca-icono">P</span> PIMS <span class="separador">/</span> <span>Laboratorio Gestitel</span></a>
+        <span id="servicio-resumen" class="estado-servicio" role="status">Comprobando servicio…</span>
+    </header>
+    <main class="contenedor">
+        <div class="aviso-laboratorio"><strong>Versión experimental · base independiente</strong><span>Prueba planes e historial y compara los reportes.</span><a href="http://127.0.0.1:8080" target="_blank" rel="noopener">Abrir versión aprobada ↗</a></div>
+        <section class="cabecera">
+            <div>
+                <p class="etiqueta">Agente especializado · Evaluación inicial</p>
+                <h1>Riesgos de privacidad</h1>
+                <p>Evalúa un tratamiento de datos personales y revisa sus riesgos y medidas propuestas.</p>
+            </div>
+            <button id="exportar-reporte" class="boton-secundario" type="button" disabled>↓ Descargar reporte (.txt)</button>
+        </section>
+
+        <section class="resumen" aria-label="Resumen de la evaluación actual" aria-live="polite">
+            <article class="indicador"><p>Estado del análisis</p><strong id="resumen-estado">Sin evaluar</strong><small>Evaluación actual</small></article>
+            <article class="indicador azul"><p>Tu nivel de riesgo</p><strong id="resumen-nivel">—</strong><small id="resumen-puntaje">Matriz: probabilidad × impacto</small></article>
+            <article class="indicador violeta"><p>Riesgos identificados</p><strong id="resumen-riesgos">—</strong><small>Según el análisis generado</small></article>
+            <article class="indicador verde"><p>Medidas recomendadas</p><strong id="resumen-medidas">—</strong><small>Propuestas para revisión</small></article>
+        </section>
+        <p class="nota alcance">Resumen de la evaluación actual. Las evaluaciones válidas se guardan en el historial experimental. El análisis original se conserva para comparar.</p>
+
+        <div class="pestanas" role="tablist" aria-label="Secciones de la evaluación">
+            <button id="tab-evaluacion" type="button" role="tab" aria-selected="true" aria-controls="vista-evaluacion" tabindex="0">01 · Evaluación</button>
+            <button id="tab-resultados" type="button" role="tab" aria-selected="false" aria-controls="vista-resultados" tabindex="-1">02 · Resultados</button>
+            <button id="tab-medidas" type="button" role="tab" aria-selected="false" aria-controls="vista-medidas" tabindex="-1">03 · Tratamiento de riesgos</button>
+            <button id="tab-historial" type="button" role="tab" aria-selected="false" aria-controls="vista-historial" tabindex="-1">04 · Historial y comparación</button>
+        </div>
+        <section id="vista-evaluacion" role="tabpanel" aria-labelledby="tab-evaluacion">
+        <div class="evaluacion-layout">
+        <aside class="panel conexion" aria-label="Estado de Ollama">
+            <p class="etiqueta">Asistente local</p>
+            <h2>Motor de análisis</h2>
+
+            <p id="estado-ollama" role="status">Comprobando Ollama…</p>
+            <label for="modelo">Modelo local para el reporte</label>
+            <select id="modelo"><option value="">Modelo configurado en el servidor</option></select>
+            <p class="nota">Puedes elegir otro modelo instalado. Si la IA falla, se mostrará el motivo para que puedas reintentar.</p>
+            <button id="comprobar-ollama" type="button">Comprobar conexión</button>
+        </aside>
+        <section class="panel">
+            <div class="titulo-panel"><h2>Describe el escenario</h2><p>Incluye la finalidad, los datos tratados y los controles existentes.</p></div>
+            <form id="formRiesgo">
+                <label for="descripcion">Descripción del tratamiento</label>
+                <textarea
+                    id="descripcion"
+                    placeholder="Ejemplo: La universidad almacena DNI, correos y fotografías sin control de acceso por roles."
+                    required></textarea>
+
+                <div class="fila">
+                    <div>
+                        <label for="probabilidad">Probabilidad</label>
+                        <select id="probabilidad">
+                            <option value="1">1 - Muy baja</option>
+                            <option value="2">2 - Baja</option>
+                            <option value="3" selected>3 - Media</option>
+                            <option value="4">4 - Alta</option>
+                            <option value="5">5 - Muy alta</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="impacto">Impacto</label>
+                        <select id="impacto">
+                            <option value="1">1 - Muy bajo</option>
+                            <option value="2">2 - Bajo</option>
+                            <option value="3">3 - Medio</option>
+                            <option value="4" selected>4 - Alto</option>
+                            <option value="5">5 - Muy alto</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="campo-rol">
+                    <label for="rol_privacidad">Rol de la organización en este tratamiento</label>
+                    <select id="rol_privacidad">
+                        <option value="no_definido">Por confirmar</option>
+                        <option value="responsable">Responsable: decide finalidad y medios</option>
+                        <option value="encargado">Encargado: trata datos por cuenta de otro</option>
+                        <option value="ambos">Ambos roles</option>
+                    </select>
+                    <p class="nota">Incluye controles existentes, exposición, volumen y daños posibles en la descripción para obtener una opinión más precisa.</p>
+                </div>
+                <fieldset>
+                    <legend>Categorías de datos involucrados</legend>
+                    <label class="check"><input type="checkbox" value="Identificación"> Identificación</label>
+                    <label class="check"><input type="checkbox" value="Contacto"> Contacto</label>
+                    <label class="check"><input type="checkbox" value="Financieros"> Financieros</label>
+                    <label class="check"><input type="checkbox" value="Salud"> Salud</label>
+                    <label class="check"><input type="checkbox" value="Biométricos"> Biométricos</label>
+                    <label class="check"><input type="checkbox" value="Académicos"> Académicos</label>
+                </fieldset>
+
+                <button type="submit">Evaluar riesgo</button>
+                <p id="progreso-analisis" role="status" class="nota"></p>
+            </form>
+        </section>
+
+        </div>
+        </section>
+
+        <section id="vista-resultados" role="tabpanel" aria-labelledby="tab-resultados" hidden>
+            <div id="vacio-resultados" class="panel estado-vacio">
+                <span class="vacio-icono" aria-hidden="true">◎</span>
+                <h2>Tu análisis aparecerá aquí</h2>
+                <p>Completa el escenario en Evaluación para revisar el nivel, los riesgos y el sustento documental.</p>
+                <button type="button" data-ir-evaluacion>Ir a evaluación</button>
+            </div>
+        <section id="resultado" class="panel resultado oculto">
+            <div class="resultado-superior">
+                <div>
+                    <p class="etiqueta">Tu valoración · matriz del proyecto</p>
+                    <h2 id="nivel"></h2>
+                </div>
+                <div id="puntaje" class="puntaje"></div>
+            </div>
+
+            <p id="modo" class="nota" aria-live="polite"></p>
+            <p id="mensaje" class="nota"></p>
+            <p id="fuente-documental" class="nota"></p>
+
+            <section class="opinion" aria-labelledby="titulo-opinion">
+                <h3 id="titulo-opinion">Segunda opinión de Ollama</h3>
+                <p id="valoracion-ia"></p>
+                <p id="comparacion-ia"></p>
+                <ul id="motivos-ia"></ul>
+                <p id="confianza-ia"></p>
+                <h4>Información que falta</h4>
+                <ul id="datos-faltantes"></ul>
+            </section>
+            <h3>Riesgos identificados</h3>
+            <div id="riesgos"></div>
+
+            <h3>Justificación</h3>
+            <p id="justificacion"></p>
+
+            <h3>Posibles consecuencias</h3>
+            <ul id="consecuencias"></ul>
+
+            <h3>Indicadores específicos de riesgo</h3>
+            <p class="nota">Propuestas para seguimiento. Los umbrales deben acordarse con el equipo; los valores actuales requieren medición.</p>
+            <div id="indicadores"></div>
+
+            <h3>Posibles controles afectados · ISO/IEC 27701:2025</h3>
+            <p class="nota">Anexo A: controles de referencia. Anexo B: guía de implementación. Catálogo parcial; cada relación requiere verificar evidencia y aplicabilidad.</p>
+            <div id="referencias-iso"></div>
+            <ul id="avisos-revision" class="nota"></ul>
+
+            <h3>Fuentes documentales recuperadas · RAG</h3>
+            <p id="estado-rag" class="nota"></p>
+            <p class="nota">La recuperación por similitud aporta contexto; no acredita por sí sola que una fuente sustente un riesgo o una medida.</p>
+            <h4>Cómo se relacionan las fuentes con las medidas</h4>
+            <div id="aplicaciones-rag"></div>
+            <h4>Documentos recuperados para consulta</h4>
+            <div id="fuentes-rag"></div>
+
+            <h3>Ley 29733 · artículos relacionados con los riesgos</h3>
+            <p id="fuente-legal" class="nota"></p>
+            <div id="referencias-ley"></div>
+
+        </section>
+        </section>
+
+        <section id="vista-medidas" role="tabpanel" aria-labelledby="tab-medidas" hidden>
+            <div id="vacio-medidas" class="panel estado-vacio">
+                <span class="vacio-icono" aria-hidden="true">✓</span>
+                <h2>Primero, evalúa un escenario</h2>
+                <p>Las medidas propuestas se mostrarán cuando termine el análisis.</p>
+                <button type="button" data-ir-evaluacion>Ir a evaluación</button>
+            </div>
+            <section id="contenido-medidas" class="panel oculto">
+                <div class="titulo-panel"><h2>Tratamiento de riesgos · propuestas</h2><p>Revisa su aplicabilidad antes de implementarlas. Estas propuestas no representan controles ejecutados.</p></div>
+                <p class="aviso-tratamiento">Plan inicial para revisión humana. Asigna responsables, fechas y actividades desde Editar plan. La valoración inicial corresponde al escenario completo; la residual se registra por riesgo tras verificar su medida.</p>
+                <div class="tratamiento-herramientas">
+                    <div class="tratamiento-busqueda">
+                        <label for="buscar-tratamiento">Buscar en el plan propuesto</label>
+                        <input id="buscar-tratamiento" type="search" placeholder="Código, riesgo, medida o verificación…" aria-controls="medidas-por-riesgo">
+                    </div>
+                    <p id="tratamiento-conteo" class="nota" role="status"></p>
+                </div>
+                <div class="tabla-contenedor" role="region" aria-label="Propuestas de tratamiento por riesgo" tabindex="0">
+                    <table class="tabla-tratamiento" role="table">
+                        <caption>Propuestas de la evaluación actual · seguimiento experimental guardado</caption>
+                        <colgroup><col class="columna-riesgo"><col class="columna-medida"><col class="columna-verificacion"><col class="columna-seguimiento"></colgroup>
+                        <thead role="rowgroup"><tr role="row"><th scope="col">Riesgo y prioridad</th><th scope="col">Medida propuesta</th><th scope="col">Cómo verificar</th><th scope="col">Seguimiento</th></tr></thead>
+                        <tbody id="medidas-por-riesgo" role="rowgroup"></tbody>
+                    </table>
+                </div>
+                <div id="acciones-experimento" class="acciones-experimento" hidden>
+                    <p id="evaluacion-guardada" role="status"></p>
+                    <a id="descargar-tabla" class="enlace-boton">Descargar tabla CSV</a>
+                    <a id="descargar-experimental" class="enlace-boton">Reporte con plan</a>
+                    <a id="descargar-base" class="enlace-boton secundario">Reporte original</a>
+                </div>
+                <h3>Recomendaciones generales</h3>
+                <ul id="recomendaciones" class="lista-medidas"></ul>
+            </section>
+        </section>
+
+        <section id="vista-historial" role="tabpanel" aria-labelledby="tab-historial" hidden>
+            <section class="panel">
+                <div class="titulo-panel"><h2>Evaluaciones guardadas</h2><p>Abre una evaluación anterior para continuar el plan y conservar su análisis original.</p></div>
+                <button id="recargar-historial" type="button" class="boton-secundario">Actualizar historial</button>
+                <p id="estado-historial" role="status"></p>
+                <div class="tabla-contenedor"><table class="tabla-historial" role="table">
+                    <thead><tr><th scope="col">Fecha</th><th scope="col">Escenario</th><th scope="col">Riesgos</th><th scope="col">Acción</th></tr></thead>
+                    <tbody id="lista-historial" role="rowgroup"></tbody>
+                </table></div>
+            </section>
+            <section class="panel" id="panel-comparacion" hidden>
+                <div class="titulo-panel"><h2>Comparación del reporte</h2><p>Se conserva el mismo análisis original. Esta vista compara organización y seguimiento; no mide precisión normativa.</p></div>
+                <div id="metricas-comparacion"></div>
+            </section>
+        </section>
+        <dialog id="dialogo-plan" aria-labelledby="titulo-editar-plan">
+            <form id="form-plan">
+                <div class="cabecera-editor"><h2 id="titulo-editar-plan">Editar plan</h2><button id="cerrar-plan" type="button" class="boton-secundario">Cerrar</button></div>
+                <p id="nombre-riesgo-plan"></p>
+                <div class="campos-plan">
+                    <label>Responsable<input id="plan-responsable" maxlength="160" autocomplete="off"></label>
+                    <label>Área<input id="plan-area" maxlength="160"></label>
+                    <label>Inicio previsto<input id="plan-inicio" type="date"></label>
+                    <label>Plazo previsto<input id="plan-fin" type="date"></label>
+                    <label>Estado<select id="plan-estado"><option value="propuesto">Propuesto</option><option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="en_curso">En curso</option><option value="verificado">Verificado</option><option value="descartado">Descartado</option></select></label>
+                </div>
+                <label for="plan-medida">Medida del plan</label><textarea id="plan-medida" maxlength="5000" required></textarea>
+                <label for="plan-verificacion">Cómo verificar la medida</label><textarea id="plan-verificacion" maxlength="5000" required></textarea>
+                <div class="cabecera-editor"><h3>Actividades</h3><button id="agregar-actividad" type="button" class="boton-secundario">Añadir actividad</button></div>
+                <div id="lista-actividades"></div>
+                <h3>Verificación y reevaluación</h3>
+                <p class="nota">Completa esta sección cuando existan evidencias de ejecución. Las cifras residuales son una valoración humana por riesgo.</p>
+                <label for="plan-evidencia">Evidencia o referencia verificable</label><textarea id="plan-evidencia" maxlength="5000"></textarea>
+                <div class="campos-plan">
+                    <label>Verificado por<input id="plan-verificador" maxlength="160"></label>
+                    <label>Fecha de verificación<input id="plan-fecha-verificacion" type="date"></label>
+                    <label>Probabilidad residual<select id="plan-probabilidad"><option value="">Sin reevaluar</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+                    <label>Impacto residual<select id="plan-impacto"><option value="">Sin reevaluar</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+                </div>
+                <p id="error-plan" role="alert"></p>
+                <button id="guardar-plan" type="submit">Guardar plan experimental</button>
+            </form>
+        </dialog>
+        <section id="error" class="error oculto" role="alert"></section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js', v=versiones['js/app.js']) }}"></script>
+    <script src="{{ url_for('static', filename='js/experimento.js', v=versiones['js/experimento.js']) }}"></script>
+</body>
+</html>

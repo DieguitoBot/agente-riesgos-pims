@@ -8,6 +8,17 @@ class BaseNoDisponible(OSError):
     pass
 
 
+# La base actual separa texto y procedencia en columnas. El esquema histórico
+# conservaba esos campos dentro de datos. Las columnas presentes prevalecen y
+# los NULL no borran metadatos históricos. to_jsonb permite leer ambos esquemas
+# sin modificar el corpus ni exigir columnas que una instalación antigua no tiene.
+DATOS_FRAGMENTO_SQL = """jsonb_build_object('pagina', NULL) || f.datos ||
+    jsonb_strip_nulls(to_jsonb(f) - ARRAY[
+        'id', 'documento_id', 'tipo', 'codigo', 'datos',
+        'embedding', 'modelo_embedding', 'busqueda'
+    ]::text[])"""
+
+
 @contextmanager
 def conectar(admin=False):
     try:
@@ -30,7 +41,7 @@ def conectar(admin=False):
 
 def leer_norma(tipo):
     with conectar() as con:
-        filas = con.execute('''SELECT f.codigo, f.datos, d.sha256
+        filas = con.execute(f'''SELECT f.codigo, {DATOS_FRAGMENTO_SQL}, d.sha256
             FROM pims_riesgos.fragmentos f JOIN pims_riesgos.documentos d ON d.id=f.documento_id
             WHERE f.tipo=%s ORDER BY f.id''', (tipo,)).fetchall()
     if not filas:
@@ -40,8 +51,9 @@ def leer_norma(tipo):
 
 def leer_fragmentos():
     with conectar() as con:
-        return [fila[0] for fila in con.execute(
-            "SELECT datos FROM pims_riesgos.fragmentos WHERE tipo='rag' ORDER BY id").fetchall()]
+        return [fila[0] for fila in con.execute(f"""
+            SELECT {DATOS_FRAGMENTO_SQL} FROM pims_riesgos.fragmentos f
+            WHERE f.tipo='rag' ORDER BY f.id""").fetchall()]
 
 
 def inventario():
@@ -54,6 +66,7 @@ def inventario():
 
 def leer_vectores(modelo):
     with conectar() as con:
-        return con.execute("""SELECT datos,embedding FROM pims_riesgos.fragmentos
-            WHERE tipo='rag' AND modelo_embedding=%s AND embedding IS NOT NULL ORDER BY id""",
+        return con.execute(f"""SELECT {DATOS_FRAGMENTO_SQL}, f.embedding
+            FROM pims_riesgos.fragmentos f WHERE f.tipo='rag'
+            AND f.modelo_embedding=%s AND f.embedding IS NOT NULL ORDER BY f.id""",
             (modelo,)).fetchall()

@@ -16,8 +16,9 @@ opcionales y rol opcional (`responsable`, `encargado`, `ambos`, `no_definido`).
 
 1. Validar entradas antes de consultar al modelo.
 2. Calcular la valoración del usuario en Python con la matriz del proyecto.
-3. Recuperar fragmentos del Markdown local por temas y rol; conservar página,
-   línea y huella del archivo. Incorporar solo controles con contexto recuperado.
+3. Recuperar fragmentos de PostgreSQL por temas y rol; conservar página,
+   línea y huella del documento original. Combinar términos y embeddings para
+   contexto institucional. Incorporar solo controles con contexto recuperado.
 4. Solicitar a Ollama riesgos, consecuencias, medidas y una opinión independiente
    con justificaciones, confianza y datos faltantes. Admitir abstención.
 5. Solicitar indicadores medibles y posibles relaciones con controles del anexo A,
@@ -49,9 +50,11 @@ confirmados. El catálogo es parcial y no sustituye la norma autorizada.
 `prompts/riesgo_prompt.py` define el prompt y el esquema. `llm/ollama_client.py`
 valida la respuesta. `skills/evaluacion_riesgo.py` implementa el proceso y el
 respaldo. `knowledge/controles_iso.py` mantiene los códigos y fuentes.
-Se usa el contexto suministrado, el Markdown del usuario mediante recuperación
-local por temas, un catálogo parcial estático y recuperación híbrida con
-embeddings y FAISS sobre documentos locales. No hay integración entre agentes. La interfaz permite exportar el reporte como texto.
+Se usa el escenario suministrado, las fuentes importadas en PostgreSQL mediante
+recuperación temática, un catálogo parcial estático de 13 controles y recuperación
+híbrida con embeddings y términos sobre los fragmentos de la base. FAISS queda
+para herramientas históricas. No hay integración entre agentes. La interfaz permite
+exportar el reporte como texto; no persiste un historial de evaluaciones.
 
 ## Reporte y soporte legal de la v2
 

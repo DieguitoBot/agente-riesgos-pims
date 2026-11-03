@@ -1,0 +1,11 @@
+{
+  "descripcion": "Una aplicación universitaria almacena DNI, correos y fotografías sin control de acceso por roles.",
+  "probabilidad": 4,
+  "impacto": 4,
+  "categorias": [
+    "Identificación",
+    "Contacto",
+    "Académicos"
+  ],
+  "rol_privacidad": "responsable"
+}

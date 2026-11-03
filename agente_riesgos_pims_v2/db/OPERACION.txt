@@ -9,7 +9,6 @@ la llamada al modelo; RAG_EMBED_MODEL debe coincidir con el modelo indexado.
 
 Desde agente_riesgos_pims_v2:
   .venv/bin/python -m db.local iniciar
-  .venv/bin/python -m db.migrar
   .venv/bin/python -m db.migrar --inventario
   .venv/bin/python -m rag.indexar  # solo si faltan embeddings
   ./iniciar.sh
@@ -36,6 +35,12 @@ Los dos textos de la ley se conservan con procedencias distintas; no se asume qu
 sean iguales. La vigencia y exactitud de fuentes importadas siguen pendientes.
 
 Migración:
+ATENCIÓN: db.migrar escribe el esquema histórico con contenido dentro de datos.
+Usarlo solo al preparar una base nueva con ese esquema. La base actual de este
+equipo ya tiene el contenido normalizado en columnas y ediciones propias:
+no reimportarla con ese comando. Para trasladarla, respaldar y restaurar la base.
+La lectura y rag.indexar admiten ambos formatos; las columnas tienen prioridad.
+
 Lista explícita de fuentes dentro de este repositorio; no se exploran proyectos vecinos.
 Se procesa todo antes de abrir la transacción. Repetir actualiza por clave sin duplicar
 registros y actualiza sus fragmentos en una sola transacción. Conserva los
@@ -50,6 +55,8 @@ requirements-rag.txt contiene las dependencias opcionales de importación histó
 Inventario consultable en GET /api/documentos; la API devuelve 503 si la base falla.
 
 Pruebas unitarias: .venv/bin/python -m unittest discover -s tests
+Pruebas SQL de lectura, compatibles con la base actual y sin reimportación:
+  PIMS_TEST_LECTURA=1 .venv/bin/python -m unittest tests.test_postgres_lectura -v
 Pruebas contra la base dedicada (incluyen reimportación del corpus):
   PIMS_TEST_DATABASE=1 PIMS_BUSQUEDA_SEMANTICA=0 .venv/bin/python -m unittest discover -s tests
 
@@ -68,8 +75,8 @@ No se ha aprovisionado alojamiento en Supabase por el mero hecho de preparar est
 
 Copias de seguridad: usar pg_dump en formato custom contra la base exclusiva y guardar
 el volcado en almacenamiento privado; comprobar restauración en otra base dedicada.
-Las instrucciones antiguas en README/RAG describen el flujo histórico basado en archivos;
-este archivo describe la operación PostgreSQL vigente.
+RAG.md describe el flujo histórico basado en archivos. El README raíz y
+docs/GUIA_DEMOSTRACION.md describen el funcionamiento PostgreSQL vigente.
 
 PGADMIN 4 LOCAL
 Instalado en ../.datos/pgadmin-venv (entorno separado de la aplicación).

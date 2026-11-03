@@ -29,3 +29,6 @@ agente_riesgos_pims_v2/rag/indice_local/
 # PostgreSQL exclusivo y copias privadas
 .datos/
 *.dump
+
+# Referencia del ingeniero; la implementación no requiere publicar el volcado original
+/gestitel_base_de_datos.sql
