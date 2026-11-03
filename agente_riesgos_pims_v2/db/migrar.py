@@ -33,8 +33,14 @@ def preparar():
         clave = str(ruta.relative_to(RAIZ))
         categoria, fragmentos = 'proyecto', []
         if ruta.suffix == '.pdf':
-            with pymupdf.open(ruta) as doc:
-                contenido = '\n'.join(p.get_text(sort=True) for p in doc)
+            cache_ocr = BASE / 'knowledge/.ocr_cache' / f'{ruta.name}.json'
+            if cache_ocr.exists():
+                datos_ocr = json.loads(cache_ocr.read_text(encoding='utf-8'))
+                with pymupdf.open(ruta) as doc:
+                    contenido = '\n'.join(p.get_text(sort=True).strip() or datos_ocr.get(str(n), '') for n, p in enumerate(doc, 1))
+            else:
+                with pymupdf.open(ruta) as doc:
+                    contenido = '\n'.join(p.get_text(sort=True) for p in doc)
             if not contenido.strip():
                 raise ValueError(f'PDF sin texto extraíble: {clave}; requiere OCR.')
         elif ruta.suffix == '.png':

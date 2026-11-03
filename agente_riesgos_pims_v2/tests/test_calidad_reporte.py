@@ -177,7 +177,7 @@ class TestCalidadReporte(unittest.TestCase):
             analizar_con_ollama(self.contexto)
         solicitud = pedir.call_args.kwargs['json']
         self.assertFalse(solicitud['think'])
-        self.assertEqual(solicitud['options']['num_predict'], 16384)
+        self.assertEqual(solicitud['options']['num_predict'], 5120)
         self.assertEqual(solicitud['options']['presence_penalty'], 0)
 
     def test_contrato_restringe_hechos_y_fuentes_sin_mutar_otras_solicitudes(self):

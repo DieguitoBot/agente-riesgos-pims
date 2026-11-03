@@ -1,7 +1,14 @@
 """Configuración local; se lee del entorno sin necesitar un archivo .env."""
 import math
 import os
+from pathlib import Path
 from urllib.parse import urlsplit
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
+except ImportError:
+    pass
 
 
 def obtener_modelo():
@@ -27,7 +34,7 @@ def obtener_configuracion(modelo_solicitado=None):
     if not modelo or modelo.endswith(":cloud"):
         raise ValueError("OLLAMA_MODEL debe indicar un modelo local instalado, sin sufijo :cloud.")
     limites = {}
-    for variable, defecto in (("OLLAMA_NUM_CTX", 32768), ("OLLAMA_NUM_PREDICT", 16384)):
+    for variable, defecto in (("OLLAMA_NUM_CTX", 16384), ("OLLAMA_NUM_PREDICT", 5120)):
         try:
             valor = int(os.getenv(variable, str(defecto)))
         except ValueError as exc:

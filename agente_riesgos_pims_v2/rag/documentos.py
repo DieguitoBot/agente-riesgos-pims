@@ -40,8 +40,18 @@ def leer_documentos(carpeta):
             continue
         nombre = str(p.relative_to(raiz))
         if p.suffix.lower() == ".pdf":
-            with pymupdf.open(p) as doc:
-                bloques = [(n, pagina.get_text(sort=True)) for n, pagina in enumerate(doc, 1)]
+            cache_ocr = p.parent.parent / ".ocr_cache" / f"{p.name}.json"
+            if cache_ocr.exists():
+                import json
+                datos_ocr = json.loads(cache_ocr.read_text(encoding="utf-8"))
+                with pymupdf.open(p) as doc:
+                    bloques = []
+                    for n, pagina in enumerate(doc, 1):
+                        txt = pagina.get_text(sort=True).strip() or datos_ocr.get(str(n), "")
+                        bloques.append((n, txt))
+            else:
+                with pymupdf.open(p) as doc:
+                    bloques = [(n, pagina.get_text(sort=True)) for n, pagina in enumerate(doc, 1)]
         else:
             # Preservar los artículos/secciones en Markdown antes de fragmentar.
             bloques = [(None, b) for b in re.split(r'(?m)(?=^#{1,6} )', p.read_text(encoding="utf-8"))]
