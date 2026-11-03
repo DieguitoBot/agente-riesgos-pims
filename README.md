@@ -4,11 +4,11 @@ Proyecto académico PIMS: **escenario → evaluación → fuentes → medidas �
 Flask presenta la interfaz; Python calcula la matriz y valida el análisis de
 Ollama. PostgreSQL almacena los documentos, fragmentos y embeddings del agente.
 
-## Probar la versión experimental con el equipo
+## Probar Agente PIMS v3 con el equipo
 
-La rama `mejora/laboratorio-gestitel-equipo` incluye el laboratorio en otra
+La rama `mejora/gestion-riesgos-v3` incluye PIMS v3 en otra
 carpeta, con historial, planes, actividades y descargas CSV. Sigue la
-[guía para clonar y probar la rama](docs/PROBAR_RAMA_EXPERIMENTAL.md).
+[guía para clonar y probar la rama](docs/PROBAR_VERSION_V3.md).
 Incluye una demostración ficticia que funciona sin la base privada ni Ollama.
 
 ## Ejecutar en este equipo

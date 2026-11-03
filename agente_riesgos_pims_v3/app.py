@@ -2,7 +2,7 @@ from hashlib import sha256
 from pathlib import Path
 import time
 
-import experimento as laboratorio
+import experimento as gestion
 
 from flask import Flask, render_template, request, jsonify, Response, make_response
 from knowledge.documento_iso import leer_secciones
@@ -63,10 +63,10 @@ def api_evaluar():
                        resultado_preliminar=resultado), 503
     if resultado.get('reporte_ia_generado'):
         try:
-            resultado['experimento_id'] = laboratorio.guardar_evaluacion(
+            resultado['experimento_id'] = gestion.guardar_evaluacion(
                 resultado, time.monotonic() - inicio)
         except BaseNoDisponible:
-            return jsonify(error='El análisis terminó, pero no pudo guardarse en el laboratorio. La versión aprobada no fue modificada.'), 503
+            return jsonify(error='El análisis terminó, pero no pudo guardarse en PIMS v3. Intenta de nuevo.'), 503
     return jsonify(resultado)
 
 
@@ -102,12 +102,12 @@ def fuente_ley(numero):
                     content_type='text/plain; charset=utf-8', headers={'X-Content-Type-Options': 'nosniff'})
 
 
-@app.errorhandler(laboratorio.NoEncontrado)
+@app.errorhandler(gestion.NoEncontrado)
 def no_encontrado(error):
     return jsonify(error=str(error)), 404
 
 
-@app.errorhandler(laboratorio.Conflicto)
+@app.errorhandler(gestion.Conflicto)
 def conflicto(error):
     return jsonify(error=str(error)), 409
 
@@ -115,31 +115,31 @@ def conflicto(error):
 @app.get('/api/experimento/evaluaciones')
 def historial():
     try:
-        return jsonify(evaluaciones=laboratorio.listar_evaluaciones())
+        return jsonify(evaluaciones=gestion.listar_evaluaciones())
     except BaseNoDisponible:
-        return jsonify(error='Base experimental no disponible.'), 503
+        return jsonify(error='La base de PIMS v3 no está disponible.'), 503
 
 
 @app.get('/api/experimento/evaluaciones/<evaluacion>')
 def detalle_experimental(evaluacion):
     try:
-        detalle = laboratorio.obtener_evaluacion(evaluacion)
-        detalle['comparacion'] = laboratorio.comparar(detalle)
+        detalle = gestion.obtener_evaluacion(evaluacion)
+        detalle['comparacion'] = gestion.comparar(detalle)
         return jsonify(detalle)
     except BaseNoDisponible:
-        return jsonify(error='Base experimental no disponible.'), 503
+        return jsonify(error='La base de PIMS v3 no está disponible.'), 503
 
 
 @app.put('/api/experimento/planes/<int:plan_id>')
 def editar_plan(plan_id):
     try:
-        return jsonify(laboratorio.actualizar_plan(plan_id, request.get_json(silent=True)))
-    except laboratorio.Conflicto:
+        return jsonify(gestion.actualizar_plan(plan_id, request.get_json(silent=True)))
+    except gestion.Conflicto:
         raise
     except ValueError as exc:
         return jsonify(error=str(exc)), 400
     except BaseNoDisponible:
-        return jsonify(error='No se pudo guardar el plan experimental.'), 503
+        return jsonify(error='No se pudo guardar el plan.'), 503
 
 
 @app.get('/api/experimento/evaluaciones/<evaluacion>/reporte')
@@ -148,14 +148,14 @@ def exportar_experimento(evaluacion):
     if formato not in ('txt', 'base', 'csv'):
         return jsonify(error='Formato no admitido.'), 400
     try:
-        detalle = laboratorio.obtener_evaluacion(evaluacion)
+        detalle = gestion.obtener_evaluacion(evaluacion)
     except BaseNoDisponible:
-        return jsonify(error='Base experimental no disponible.'), 503
-    contenido = (laboratorio.exportar_csv(detalle) if formato == 'csv' else
-                 detalle['reporte_base'] if formato == 'base' else laboratorio.reporte_experimental(detalle))
+        return jsonify(error='La base de PIMS v3 no está disponible.'), 503
+    contenido = (gestion.exportar_csv(detalle) if formato == 'csv' else
+                 detalle['reporte_base'] if formato == 'base' else gestion.reporte_experimental(detalle))
     extension = 'csv' if formato == 'csv' else 'txt'
     return Response(contenido, content_type=('text/csv' if formato == 'csv' else 'text/plain')+'; charset=utf-8',
-                    headers={'Content-Disposition': f'attachment; filename="laboratorio-{detalle["id"]}-{formato}.{extension}"',
+                    headers={'Content-Disposition': f'attachment; filename="pims-v3-{detalle["id"]}-{formato}.{extension}"',
                              'X-Content-Type-Options': 'nosniff'})
 
 

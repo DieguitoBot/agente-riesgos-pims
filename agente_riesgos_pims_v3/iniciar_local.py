@@ -45,7 +45,7 @@ def iniciar():
     if servidor is None:
         parser.error('Los puertos del rango están ocupados. Usa --port con otro puerto.')
     url = f'http://127.0.0.1:{puerto}'
-    print(f'Laboratorio Gestitel: {url}', flush=True)
+    print(f'Agente PIMS v3: {url}', flush=True)
     print('Instancia independiente. Ctrl+C detiene únicamente esta instancia.', flush=True)
     if not args.sin_navegador:
         threading.Timer(0.6, webbrowser.open, args=(url,)).start()

@@ -2,14 +2,14 @@ let evaluacionActual = null;
 let planEnEdicion = null;
 const estadosPlan = {propuesto: "Propuesto", en_revision: "En revisión", aprobado: "Aprobado", en_curso: "En curso", verificado: "Verificado", descartado: "Descartado"};
 
-async function solicitarLaboratorio(url, opciones) {
+async function solicitarGestion(url, opciones) {
     const r = await fetch(url, opciones);
     const datos = await r.json();
-    if (!r.ok) throw new Error(datos.error || "No se pudo acceder al laboratorio.");
+    if (!r.ok) throw new Error(datos.error || "No se pudo acceder a PIMS v3.");
     return datos;
 }
 
-function reiniciarLaboratorio() {
+function reiniciarGestion() {
     evaluacionActual = null;
     document.getElementById("acciones-experimento").hidden = true;
     document.getElementById("panel-comparacion").hidden = true;
@@ -19,7 +19,7 @@ async function cargarHistorial() {
     const estado = document.getElementById("estado-historial");
     const cuerpo = document.getElementById("lista-historial");
     try {
-        const datos = await solicitarLaboratorio("/api/experimento/evaluaciones");
+        const datos = await solicitarGestion("/api/experimento/evaluaciones");
         cuerpo.replaceChildren();
         for (const item of datos.evaluaciones) {
             const fila = document.createElement("tr");
@@ -29,7 +29,7 @@ async function cargarHistorial() {
                 celda.textContent = valor;
                 if (titulo === "Escenario") {
                     const origen = document.createElement("small"); origen.className = "origen-ensayo";
-                    origen.textContent = ({referencia_aprobada: "Referencia de la versión aprobada", demostracion: "Demostración ficticia sin IA"})[item.procedencia] || "Ensayo de IA experimental";
+                    origen.textContent = ({referencia_aprobada: "Referencia de la versión aprobada", demostracion: "Demostración ficticia sin IA"})[item.procedencia] || "Evaluación con IA";
                     celda.appendChild(origen);
                 }
                 fila.appendChild(celda);
@@ -39,7 +39,7 @@ async function cargarHistorial() {
             abrir.addEventListener("click", async () => {
                 abrir.disabled = true;
                 try {
-                    const detalle = await solicitarLaboratorio(`/api/experimento/evaluaciones/${item.id}`);
+                    const detalle = await solicitarGestion(`/api/experimento/evaluaciones/${item.id}`);
                     document.getElementById("descripcion").value = detalle.resultado.descripcion;
                     document.getElementById("probabilidad").value = detalle.resultado.probabilidad;
                     document.getElementById("impacto").value = detalle.resultado.impacto;
@@ -59,7 +59,7 @@ async function cargarHistorial() {
 async function cargarEvaluacionActual(id) {
     if (!id) return;
     try {
-        const detalle = await solicitarLaboratorio(`/api/experimento/evaluaciones/${id}`);
+        const detalle = await solicitarGestion(`/api/experimento/evaluaciones/${id}`);
         if (ultimoResultado?.experimento_id !== id) return;
         evaluacionActual = detalle;
         document.getElementById("acciones-experimento").hidden = false;
@@ -103,7 +103,7 @@ function mostrarComparacion(detalle) {
     const c = detalle.comparacion;
     const tabla = document.createElement("table");
     const cabecera = document.createElement("thead"); const titulos = document.createElement("tr");
-    for (const texto of ["Aspecto", "Reporte original", "Laboratorio"]) {
+    for (const texto of ["Aspecto", "Reporte original", "PIMS v3"]) {
         const th = document.createElement("th"); th.scope = "col"; th.textContent = texto; titulos.appendChild(th);
     }
     cabecera.appendChild(titulos); tabla.appendChild(cabecera);
@@ -171,7 +171,7 @@ document.getElementById("form-plan").addEventListener("submit", async evento => 
         datos.actividades.push(actividad);
     }
     try {
-        await solicitarLaboratorio(`/api/experimento/planes/${planEnEdicion.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
+        await solicitarGestion(`/api/experimento/planes/${planEnEdicion.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(datos)});
         document.getElementById("dialogo-plan").close(); await cargarEvaluacionActual(evaluacionActual.id);
     } catch (error) { document.getElementById("error-plan").textContent=error.message; }
     finally { boton.disabled=false; }

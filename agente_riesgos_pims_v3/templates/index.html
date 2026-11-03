@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio PIMS · Planes de tratamiento</title>
+    <title>Agente PIMS v3 · Planes de tratamiento</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=versiones['css/style.css']) }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/experimento.css', v=versiones['css/experimento.css']) }}">
 </head>
 <body>
     <header class="barra-superior">
-        <a class="marca" href="/" aria-label="PIMS · Inicio"><span class="marca-icono">P</span> PIMS <span class="separador">/</span> <span>Laboratorio Gestitel</span></a>
+        <a class="marca" href="/" aria-label="PIMS · Inicio"><span class="marca-icono">P</span> PIMS <span class="separador">/</span> <span>Agente PIMS v3</span></a>
         <span id="servicio-resumen" class="estado-servicio" role="status">Comprobando servicio…</span>
     </header>
     <main class="contenedor">
-        <div class="aviso-laboratorio"><strong>Versión experimental · base independiente</strong><span>Prueba planes e historial y compara los reportes.</span><a href="http://127.0.0.1:8080" target="_blank" rel="noopener">Abrir versión aprobada ↗</a></div>
+        <div class="aviso-version"><strong>Agente PIMS v3 · Gestión de riesgos</strong><span>Organiza evaluaciones, planes y actividades de tratamiento.</span><a href="http://127.0.0.1:8080" target="_blank" rel="noopener">Abrir PIMS v2 ↗</a></div>
         <section class="cabecera">
             <div>
                 <p class="etiqueta">Agente especializado · Evaluación inicial</p>
@@ -29,7 +29,7 @@
             <article class="indicador violeta"><p>Riesgos identificados</p><strong id="resumen-riesgos">—</strong><small>Según el análisis generado</small></article>
             <article class="indicador verde"><p>Medidas recomendadas</p><strong id="resumen-medidas">—</strong><small>Propuestas para revisión</small></article>
         </section>
-        <p class="nota alcance">Resumen de la evaluación actual. Las evaluaciones válidas se guardan en el historial experimental. El análisis original se conserva para comparar.</p>
+        <p class="nota alcance">Resumen de la evaluación actual. Las evaluaciones válidas se guardan en el historial de PIMS v3. El análisis original se conserva para comparar.</p>
 
         <div class="pestanas" role="tablist" aria-label="Secciones de la evaluación">
             <button id="tab-evaluacion" type="button" role="tab" aria-selected="true" aria-controls="vista-evaluacion" tabindex="0">01 · Evaluación</button>
@@ -191,7 +191,7 @@
                 </div>
                 <div class="tabla-contenedor" role="region" aria-label="Propuestas de tratamiento por riesgo" tabindex="0">
                     <table class="tabla-tratamiento" role="table">
-                        <caption>Propuestas de la evaluación actual · seguimiento experimental guardado</caption>
+                        <caption>Propuestas de la evaluación actual · seguimiento guardado</caption>
                         <colgroup><col class="columna-riesgo"><col class="columna-medida"><col class="columna-verificacion"><col class="columna-seguimiento"></colgroup>
                         <thead role="rowgroup"><tr role="row"><th scope="col">Riesgo y prioridad</th><th scope="col">Medida propuesta</th><th scope="col">Cómo verificar</th><th scope="col">Seguimiento</th></tr></thead>
                         <tbody id="medidas-por-riesgo" role="rowgroup"></tbody>
@@ -219,7 +219,7 @@
                 </table></div>
             </section>
             <section class="panel" id="panel-comparacion" hidden>
-                <div class="titulo-panel"><h2>Comparación del reporte</h2><p>Se conserva el mismo análisis original. Esta vista compara organización y seguimiento; no mide precisión normativa.</p></div>
+                <div class="titulo-panel"><h2>Comparación y seguimiento del reporte</h2><p>Se conserva el mismo análisis original. Esta vista compara organización y seguimiento; no mide precisión normativa.</p></div>
                 <div id="metricas-comparacion"></div>
             </section>
         </section>
@@ -248,7 +248,7 @@
                     <label>Impacto residual<select id="plan-impacto"><option value="">Sin reevaluar</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
                 </div>
                 <p id="error-plan" role="alert"></p>
-                <button id="guardar-plan" type="submit">Guardar plan experimental</button>
+                <button id="guardar-plan" type="submit">Guardar plan</button>
             </form>
         </dialog>
         <section id="error" class="error oculto" role="alert"></section>

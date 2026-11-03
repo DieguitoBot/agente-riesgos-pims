@@ -1,11 +1,11 @@
-# Ensayo de la implementación experimental
+# Ensayo de la implementación de PIMS v3
 
-Fecha: 3 de noviembre de 2026. Carpeta: `agente_riesgos_pims_experimental`.
+Fecha: 3 de noviembre de 2026. Carpeta: `agente_riesgos_pims_v3`.
 
 ## Conservación del avance aprobado
 
 Se tomó una copia de 46 archivos de referencia antes de implementar el
-laboratorio. La comprobación posterior encontró todos esos archivos iguales.
+PIMS v3. La comprobación posterior encontró todos esos archivos iguales.
 Las huellas de documentos, fragmentos y controles de la base aprobada también
 coincidieron con las tomadas antes de copiar el corpus.
 
@@ -18,7 +18,7 @@ originales guardados. Solo modifica el seguimiento experimental.
 
 | Prueba | Resultado |
 | --- | --- |
-| Suite propia del laboratorio | 22 pruebas aprobadas, incluidas 6 con PostgreSQL. |
+| Suite propia dPIMS v3 | 22 pruebas aprobadas, incluidas 6 con PostgreSQL. |
 | Suite de la versión aprobada | 93 pruebas descubiertas, 84 aprobadas y 9 omitidas por configuración. |
 | Navegador real Chromium | Historial, apertura, edición, recarga, CSV y comparación comprobados. |
 | Adaptación de tabla | Vistas de 1440, 900 y 390 píxeles sin desbordamiento horizontal. |

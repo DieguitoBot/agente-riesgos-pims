@@ -132,7 +132,7 @@ class TestAPIExperimental(unittest.TestCase):
             js=(Path(app.static_folder)/'js'/archivo).read_text()
             requeridos=set(re.findall(r'getElementById\("([^"]+)"\)',js))
             self.assertFalse(requeridos-set(ids),requeridos-set(ids))
-        self.assertIn('Versión experimental',html)
+        self.assertIn('Agente PIMS v3',html)
 
 
 @unittest.skipUnless(os.getenv('PIMS_TEST_EXPERIMENTO')=='1','Requiere la base experimental local')

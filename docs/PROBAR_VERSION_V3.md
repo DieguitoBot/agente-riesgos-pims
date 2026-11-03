@@ -1,9 +1,9 @@
-# Probar la rama del laboratorio con el equipo
+# Probar Agente PIMS v3 con el equipo
 
-Rama: `mejora/laboratorio-gestitel-equipo`.
+Rama: `mejora/gestion-riesgos-v3`.
 
-Esta rama contiene la versión actual y el laboratorio en
-`agente_riesgos_pims_experimental/`. Para conservar tu instalación habitual,
+Esta rama contiene la versión actual y PIMS v3 en
+`agente_riesgos_pims_v3/`. Para conservar tu instalación habitual,
 clona la rama en una carpeta nueva. No es necesario modificar una base existente.
 
 ## Instalación de la demostración (Linux o WSL)
@@ -17,8 +17,8 @@ sudo apt install git python3-venv postgresql
 Después:
 
 ```bash
-git clone --branch mejora/laboratorio-gestitel-equipo --single-branch https://github.com/DieguitoBot/agente-riesgos-pims.git agente-riesgos-pims-laboratorio
-cd agente-riesgos-pims-laboratorio/agente_riesgos_pims_experimental
+git clone --branch mejora/gestion-riesgos-v3 --single-branch https://github.com/DieguitoBot/agente-riesgos-pims.git agente-riesgos-pims-v3
+cd agente-riesgos-pims-v3/agente_riesgos_pims_v3
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python preparar_demo.py
@@ -51,7 +51,7 @@ verificar el plan.
 
 ## Pruebas automáticas
 
-Desde la carpeta experimental:
+Desde la carpeta de PIMS v3:
 
 ```bash
 PIMS_TEST_EXPERIMENTO=1 .venv/bin/python -m unittest tests_experimento -v
@@ -72,7 +72,7 @@ La demostración prueba la interfaz y el seguimiento; no incluye normativa ni
 un corpus de documentos. Para generar análisis nuevos con IA se necesita Ollama
 y un modelo local. Para comparar reportes con fuentes también se necesita una
 base documental propia con copias autorizadas; consulta el
-[README del laboratorio](../agente_riesgos_pims_experimental/README.md).
+[README dPIMS v3](../agente_riesgos_pims_v3/README.md).
 
 Las bases locales, `.env`, resultados de ensayos, copia privada ISO y SQL original
 del ingeniero no se distribuyen por Git. El código y la demostración ficticia

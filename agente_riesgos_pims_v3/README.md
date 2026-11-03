@@ -1,8 +1,8 @@
-# Laboratorio PIMS · Referencia Gestitel
+# Agente PIMS v3 · Gestión de riesgos
 
-Versión experimental en una carpeta y una base PostgreSQL independientes.
+Nueva versión en una carpeta y una base PostgreSQL independientes.
 La aplicación aprobada sigue en `../agente_riesgos_pims_v2/`, normalmente en
-<http://127.0.0.1:8080>. El laboratorio abre en <http://127.0.0.1:8180>.
+<http://127.0.0.1:8080>. PIMS v3 abre en <http://127.0.0.1:8180>.
 
 ## Primera prueba desde un clon nuevo (Linux)
 
@@ -11,7 +11,7 @@ En Ubuntu/Debian están disponibles mediante `sudo apt install python3-venv post
 Desde la raíz del repositorio:
 
 ```bash
-cd agente_riesgos_pims_experimental
+cd agente_riesgos_pims_v3
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python preparar_demo.py
@@ -53,7 +53,7 @@ bash iniciar.sh
 
 Ollama y el PostgreSQL privado deben estar iniciados. El lanzador usa el entorno `.venv` de esta carpeta o, si no existe,
 el instalado en la versión aprobada para evitar duplicar dependencias. La base, credenciales,
-código de aplicación y puerto son propios de este laboratorio.
+código de aplicación y puerto son propios de este PIMS v3.
 
 1. En **Historial y comparación**, pulsa **Abrir evaluación** sobre uno de los ensayos guardados.
 2. En **Tratamiento de riesgos**, pulsa **Editar plan**.
@@ -67,7 +67,7 @@ de Ollama se guarda con su análisis y una propuesta de plan por riesgo.
 La generación puede tardar varios minutos. Las respuestas de reglas locales no se guardan como resultados de IA.
 El ejemplo ficticio se importa por separado y conserva su etiqueta de demostración.
 
-## Qué implementa de la referencia Gestitel
+## Gestión de evaluaciones y planes
 
 Se implementa un subconjunto funcional inspirado en los conceptos de
 `core_riskevaluation`, `core_risktreatment` y `core_risktreatmentactivity`:
@@ -79,8 +79,12 @@ Se implementa un subconjunto funcional inspirado en los conceptos de
 | `actividades` | Tareas del plan, responsable, plazo y estado de ejecución declarado. |
 | `cambios` | Instantáneas anteriores y posteriores de cada edición del plan. |
 
+Los identificadores internos de la base y del esquema se conservan por
+compatibilidad con los registros existentes; el nombre de la aplicación es
+**Agente PIMS v3**.
+
 El esquema `pims_riesgos` contiene una copia del corpus aprobado. El usuario de
-la aplicación puede leerlo, pero solo escribe en las tablas experimentales.
+la aplicación puede leerlo, pero solo escribe en las tablas de seguimiento.
 No tiene permiso de conexión a la base aprobada. Se rechaza cualquier conexión
 que no apunte a `pims_riesgos_experimental`, y la aplicación no admite conexión
 administrativa. La preparación se ejecuta por separado y no se repite al iniciar.
@@ -150,9 +154,9 @@ NODE_PATH=/tmp/pims-experimental-browser/node_modules PLAYWRIGHT_BROWSERS_PATH=/
 ```
 
 Prueba edición y recarga y restaura los valores del plan al terminar; registra
-esas revisiones en el historial experimental. Requiere una evaluación guardada.
+esas revisiones en el historial de PIMS v3. Requiere una evaluación guardada.
 Los informes de ensayo y las capturas quedan en `datos/`, ignorado por Git.
 La comprobación no equivale a una revisión normativa del contenido generado.
 
-Las modificaciones experimentales se mantienen en esta carpeta. Para seguir
+Las modificaciones de PIMS v3 se mantienen en esta carpeta. Para seguir
 trabajando con la versión aprobada usa su dirección y sus lanzadores habituales.

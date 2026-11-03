@@ -277,7 +277,7 @@ document.querySelectorAll("[data-ir-evaluacion]").forEach(boton => {
 });
 
 function reiniciarResumen() {
-    reiniciarLaboratorio();
+    reiniciarGestion();
     document.getElementById("resumen-estado").textContent = "Analizando…";
     document.getElementById("resumen-nivel").textContent = "—";
     document.getElementById("resumen-puntaje").textContent = "Matriz: probabilidad × impacto";

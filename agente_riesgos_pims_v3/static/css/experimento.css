@@ -1,5 +1,5 @@
-.aviso-laboratorio { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; background: #fff8e8; border: 1px solid #eed39c; padding: 16px 20px; border-radius: 10px; margin-bottom: 28px; font-size: .84rem; }
-.aviso-laboratorio a { margin-left: auto; }
+.aviso-version { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; background: #fff8e8; border: 1px solid #eed39c; padding: 16px 20px; border-radius: 10px; margin-bottom: 28px; font-size: .84rem; }
+.aviso-version a { margin-left: auto; }
 .acciones-experimento { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0 32px; }
 .acciones-experimento p { flex-basis: 100%; color: var(--suave); font-size: .8rem; }
 .enlace-boton { padding: 10px 14px; background: #245de8; color: #fff; text-decoration: none; border-radius: 7px; font-size: .83rem; }
@@ -29,7 +29,7 @@
     .campos-plan { grid-template-columns: 1fr; }
     #dialogo-plan { padding: 18px; }
     .tabla-historial th, .tabla-historial td { padding: 10px; font-size: .78rem; }
-    .aviso-laboratorio a { margin-left: 0; }
+    .aviso-version a { margin-left: 0; }
     #metricas-comparacion { overflow-x: auto; }
 }
 .origen-ensayo { display: block; color: var(--suave); margin-top: 6px; font-size: .75rem; }

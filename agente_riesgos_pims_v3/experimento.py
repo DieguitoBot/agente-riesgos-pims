@@ -1,4 +1,4 @@
-"""Persistencia del laboratorio: resultados originales y planes editables separados."""
+"""Persistencia de PIMS v3: resultados originales y planes editables separados."""
 import csv
 from datetime import date, datetime
 import io
@@ -232,7 +232,7 @@ def residual(plan):
 
 
 def reporte_experimental(evaluacion):
-    partes = [evaluacion['reporte_base'], '\nPLAN EXPERIMENTAL DE TRATAMIENTO',
+    partes = [evaluacion['reporte_base'], '\nPLAN DE TRATAMIENTO PIMS V3',
               'Evaluación: '+evaluacion['id'],
               'El análisis original se conserva. Las asignaciones y los estados son registros de revisión humana.',
               '\n| Código | Riesgo | Responsable | Plazo | Estado | Riesgo residual |',
