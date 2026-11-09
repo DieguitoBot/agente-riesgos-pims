@@ -1,16 +1,12 @@
 """Recuperación híbrida: semántica y términos, con contexto y diversidad de fuentes."""
 from collections import Counter
-import json
 import math
 import os
-from pathlib import Path
 import re
 import unicodedata
 
 from requests import RequestException
 from rag.embeddings import generar_embedding
-INDICE = Path(__file__).resolve().parent / "indice_local"
-VERSION_INDICE = 2
 
 VACIAS = set("una uno unos unas los las del para por con sin que como esta este estos estas sus sobre entre desde hasta mediante tiene son fue hay ser se de la el en y o a al un es su no lo mas universidad estudiantes datos".split())
 TEMAS = [
@@ -98,34 +94,7 @@ def seleccionar(consulta, fragmentos, semanticos, k):
             for n, (i, _) in enumerate(elegidos, 1)]
 
 
-def recuperar_contexto_archivo(consulta, k=12, carpeta=INDICE):
-    from rag.faiss_store import cargar_indice, buscar
-    try:
-        configuracion = json.loads((Path(carpeta) / "configuracion.json").read_text(encoding="utf-8"))
-        if (configuracion.get("version") != VERSION_INDICE
-                or configuracion.get("modelo") != os.getenv("RAG_EMBED_MODEL", "embeddinggemma")):
-            raise ValueError("Índice incompatible")
-    except (OSError, ValueError, AttributeError):
-        return dict(estado="indice_desactualizado", fragmentos=[],
-                    mensaje="Genera el índice compatible: python -m rag.indexar.")
-    try:
-        idx, fragmentos = cargar_indice(carpeta)
-    except (OSError, ValueError, RuntimeError):
-        return dict(estado="sin_indice", fragmentos=[], mensaje="Ejecuta python -m rag.indexar después de añadir documentos.")
-    try:
-        consulta_ampliada = ampliar_consulta(consulta)
-        semanticos = buscar(idx, fragmentos, generar_embedding(consulta_ampliada), 30)
-        datos = seleccionar(consulta_ampliada, fragmentos, semanticos, k)
-    except (RequestException, OSError, ValueError, RuntimeError):
-        return dict(estado="error", fragmentos=[], mensaje="No fue posible recuperar el contexto documental.")
-    return dict(estado="recuperado" if datos else "sin_coincidencias", fragmentos=datos,
-                mensaje="Selección por similitud y términos; verificar fuente, vigencia y aplicabilidad.")
-
-
-def recuperar_contexto_rag(consulta, k=12, carpeta=None):
-    # Una ruta explícita se reserva para herramientas y pruebas del índice histórico.
-    if carpeta is not None:
-        return recuperar_contexto_archivo(consulta, k, carpeta)
+def recuperar_contexto_rag(consulta, k=12):
     from db.repositorio import leer_fragmentos, BaseNoDisponible
     try:
         fragmentos = leer_fragmentos()

@@ -1,10 +1,8 @@
-"""Crea una base experimental aislada a partir de una lectura de la base aprobada."""
-import hashlib
+"""Importación opcional del corpus de una base local existente a V3."""
 import json
 import os
 from pathlib import Path
 import secrets
-import shutil
 import subprocess
 
 import psycopg
@@ -14,18 +12,7 @@ from dotenv import dotenv_values
 
 BASE = Path(__file__).resolve().parent
 RAIZ = BASE.parent
-NOMBRE = 'pims_riesgos_experimental'
-ROL = 'pims_experimental_app'
-
-
-def binario(nombre):
-    encontrado = shutil.which(nombre)
-    candidatos = sorted(Path('/usr/lib/postgresql').glob(f'*/bin/{nombre}'), reverse=True)
-    if encontrado:
-        return encontrado
-    if candidatos:
-        return str(candidatos[0])
-    raise SystemExit('No se encuentran los binarios de PostgreSQL.')
+from db.admin import binario, NOMBRE, ROL
 
 
 def huella_corpus(con):
@@ -41,13 +28,17 @@ def huella_corpus(con):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Importar corpus desde una base local existente sin modificarla")
+    parser.add_argument("--env-origen", required=True, type=Path)
+    args = parser.parse_args()
     os.umask(0o077)
     (BASE / 'datos').mkdir(mode=0o700, exist_ok=True)
     archivo = BASE / '.env'
     if archivo.exists():
         print('La configuración experimental ya existe; no se reemplaza ni se reimporta.')
         return
-    valores = dotenv_values(RAIZ / 'agente_riesgos_pims_v2/.env')
+    valores = dotenv_values(args.env_origen)
     parametros = conninfo_to_dict(valores.get('PIMS_DATABASE_ADMIN_URL') or '')
     if (parametros.get('dbname') != 'pims_riesgos'
             or parametros.get('host') != str(RAIZ / '.datos/socket')):
@@ -98,6 +89,7 @@ def main():
     fd = os.open(archivo, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, 'w') as f:
         f.write('PIMS_DATABASE_URL=' + json.dumps(dsn) + '\n')
+        f.write('PIMS_DATABASE_ADMIN_URL=' + json.dumps(make_conninfo(**destino)) + '\n')
     (BASE / 'datos/base_verificada.json').write_text(json.dumps({
         'base_aprobada': 'pims_riesgos', 'base_experimental': NOMBRE,
         'huellas_aprobada_antes': antes, 'huellas_aprobada_despues': despues,
