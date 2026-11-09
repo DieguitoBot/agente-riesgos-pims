@@ -1,100 +1,61 @@
-# Agente de evaluación de riesgos de privacidad
+# Agente PIMS V3 — Evaluación y gestión de riesgos de privacidad
 
-Proyecto académico PIMS: **Prompt → Asistente → Skill → Resultado funcional**.
-El código está en `agente_riesgos_pims_v2/`. Evalúa escenarios, calcula una matriz
-de riesgo, consulta Ollama local y propone medidas con referencias verificables.
+**V3 es la única aplicación mantenida de este repositorio.** Incluye evaluación
+con Ollama local, recuperación documental desde PostgreSQL, planes de tratamiento,
+actividades, historial de cambios y exportación de reportes y CSV.
 
-## Instalación desde un clon del repositorio
-
-Requisitos: Python 3.10 o superior. Ollama y un modelo local instalado son
-necesarios para generar el reporte desde la interfaz. Node.js es opcional y solo
-se usa para comprobar la sintaxis JavaScript.
-
-Desde la raíz del repositorio, en Linux/macOS:
+## Instalación nueva en Ubuntu
 
 ```bash
-cd agente_riesgos_pims_v2
+sudo apt install python3-venv postgresql
+cd agente_riesgos_pims_v3
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt -r requirements-rag.txt
+.venv/bin/python preparar_demo.py
 bash iniciar.sh
 ```
 
-En Windows PowerShell:
+Abre http://127.0.0.1:8180 (el lanzador indica otro puerto si está ocupado).
+La preparación inicial genera una base privada, credenciales locales y un caso
+**ficticio sin IA**. No reemplaza un `.env` existente. El corpus inicial está vacío:
+ver [la guía V3](agente_riesgos_pims_v3/README.md) para cargar las fuentes autorizadas.
 
-```powershell
-cd agente_riesgos_pims_v2
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-rag.txt
-.\.venv\Scripts\python.exe iniciar_local.py
-```
+## Si ya usabas V3
 
-El lanzador muestra la dirección local y abre el navegador. Comprueba los modelos
-con `ollama list`; si no hay servicio, ejecuta `ollama serve` en otra terminal.
-El modelo predeterminado es `qwen3.5:4b-q4_K_M`; puedes elegir uno ya instalado en la web.
-El proyecto no descarga modelos automáticamente. No carga archivos `.env`.
+Conserva `agente_riesgos_pims_v3/.env`, su carpeta `datos/` y el clúster que
+indica el DSN. Usa un entorno propio de V3. **No ejecutes una preparación nueva**.
+Los nombres internos `pims_riesgos_experimental`, `pims_experimental_app` y
+`gestitel_experimental` permanecen por compatibilidad con tus evaluaciones y planes.
+El servidor se inicia con `bash iniciar.sh` desde la carpeta V3.
 
-## Activar el RAG
+Si tus datos viven en el clúster privado de la raíz `.datos/`, debes mantenerlo:
+la limpieza del código no elimina ni migra automáticamente tus bases locales.
+Consulta [operación y migración](docs/OPERACION_V3.md) antes de actualizar.
 
-Con Ollama iniciado, desde `agente_riesgos_pims_v2/`:
+## API e integración
 
-```bash
-ollama pull qwen3.5:4b-q4_K_M
-ollama pull embeddinggemma
-.venv/bin/python -m rag.indexar
-.venv/bin/python comprobar_ia.py --entrada ejemplo_calidad_rag.json
-```
+- `POST /api/evaluar`: descripción, probabilidad e impacto (enteros 1–5), rol y modelo opcional.
+- `GET /api/status`: disponibilidad de Ollama.
+- `GET /api/documentos`: inventario PostgreSQL.
+- `/api/experimento/evaluaciones` y `/api/experimento/planes/...`: historial y seguimiento.
 
-En Windows usa `.\.venv\Scripts\python.exe`. El índice se genera localmente y
-no se sube a Git. Reindexa al cambiar los documentos, el modelo de embeddings o
-la versión de segmentación. La búsqueda combina embeddings FAISS y términos;
-el reporte distingue fuentes recuperadas de citas verificadas usadas por la IA.
-Sin dependencias o índice, la aplicación informa que el RAG no está disponible.
-
-## Documentos locales
-
-Conservar esta estructura:
-
-```text
-raiz-del-repositorio/
-  Ley-29733.md
-  ISO_IEC_27701_2025.md   # copia local autorizada, excluida de Git
-  agente_riesgos_pims_v2/
-```
-
-El documento ISO original contiene restricciones de reproducción y no se incluye
-en el paquete de publicación. Cada integrante debe colocar su copia autorizada
-con ese nombre. El lector espera el formato OCR descrito en los tests; otro
-Markdown puede requerir adaptar el lector. Sin documentos, la aplicación informa
-la falta de sustento local; no fabrica referencias.
+Se conservan estas rutas para no romper clientes existentes. El orquestador es
+un proyecto externo y debe configurar `RIESGOS_URL=http://127.0.0.1:8180`
+(o el puerto efectivamente anunciado). No está integrado automáticamente.
 
 ## Verificación
 
-Desde `agente_riesgos_pims_v2/` en Linux/macOS:
+Desde `agente_riesgos_pims_v3`:
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m unittest tests_experimento -v
+PIMS_TEST_EXPERIMENTO=1 .venv/bin/python -m unittest tests_experimento -v
 node --check static/js/app.js
-.venv/bin/python comprobar_ia.py
+node --check static/js/experimento.js
 ```
 
-En Windows sustituir `.venv/bin/python` por `.\.venv\Scripts\python.exe`.
-Las pruebas ISO usan un documento sintético y no necesitan la copia privada.
-Las pruebas legales usan el Markdown incluido en el repositorio. Las respuestas de IA de
-los tests están simuladas; `comprobar_ia.py` requiere Ollama real. No confundir una
-suite aprobada con una evaluación de calidad del modelo.
-
-## Alcance y colaboración
-
-No implementa auditoría, certificación legal, orquestador, comunicación entre
-agentes ni PostgreSQL. Incluye RAG local con embeddings y FAISS, además de
-recuperación temática para referencias ISO y legales.
-La matriz es una convención académica del proyecto.
-
-- [Mejoras y validación de calidad del RAG](docs/CALIDAD_REPORTES_RAG.md).
-- [Diagnóstico y pendientes](docs/REVISION.md).
-- [Acuerdos para contribuir](CONTRIBUTING.md).
-- [Documentación funcional y API](agente_riesgos_pims_v2/README.md).
-- [Identidad, activación y proceso de la Skill](agente_riesgos_pims_v2/PROMPT_SKILL.md).
-
-GitHub permite compartir el código; cada integrante ejecuta Flask y Ollama en su
-equipo. Subir el repositorio no publica automáticamente la aplicación web.
+Las pruebas SQL requieren una base V3 preparada y revierten sus registros sintéticos.
+El núcleo IA requiere Ollama y documentos autorizados. No se incluyen normativa
+privada, bases de datos, credenciales ni modelos. Ningún resultado certifica
+cumplimiento normativo; las decisiones requieren revisión humana.
