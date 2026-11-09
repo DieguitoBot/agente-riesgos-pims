@@ -1,3 +1,5 @@
+> Referencia histórica del análisis de Gestitel. V3 ya implementa persistencia y seguimiento de planes; esta referencia no es una guía operativa. Consulta el README para el estado actual.
+
 # Qué contiene gestitel_base_de_datos.sql
 
 El archivo original permanece local y no se incluye en la rama compartida.

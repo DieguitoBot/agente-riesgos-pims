@@ -7,7 +7,7 @@ import subprocess
 
 import psycopg
 from psycopg.conninfo import make_conninfo
-from preparar_experimento import binario, NOMBRE, ROL
+from db.admin import binario, NOMBRE, ROL, habilitar_lectura
 
 BASE=Path(__file__).resolve().parent
 DATOS=BASE/'datos'
@@ -45,12 +45,14 @@ def main():
         con.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO {}').format(sql.Identifier(NOMBRE),sql.Identifier(ROL)))
     parametros['dbname']=NOMBRE
     with psycopg.connect(**parametros) as con:
-        con.execute((BASE/'db/corpus_demo.sql').read_text())
+        con.execute((BASE/'db/schema.sql').read_text())
+        habilitar_lectura(con)
         con.execute((BASE/'db/experimento.sql').read_text())
     dsn=make_conninfo(**dict(parametros,user=ROL,password=clave))
     fd=os.open(BASE/'.env',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     with os.fdopen(fd,'w') as salida:
         salida.write('PIMS_DATABASE_URL='+json.dumps(dsn)+'\n')
+        salida.write('PIMS_DATABASE_ADMIN_URL='+json.dumps(make_conninfo(**parametros))+'\n')
         salida.write('PIMS_MODO_DEMO=1\n')
     from demo import crear_resultado_demo
     from experimento import guardar_evaluacion

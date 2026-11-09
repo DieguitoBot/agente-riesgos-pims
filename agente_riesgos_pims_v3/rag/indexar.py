@@ -1,20 +1,14 @@
 """Genera embeddings en PostgreSQL: python -m rag.indexar. No escribe índices en disco."""
 import os
 import math
-from pathlib import Path
 from psycopg.types.json import Jsonb
-from db.repositorio import conectar, DATOS_FRAGMENTO_SQL
+from db.repositorio import DATOS_FRAGMENTO_SQL
+from db.admin import conectar_admin
 from rag.embeddings import generar_embeddings
-
-# Compatibilidad para herramientas que inspeccionan el índice histórico.
-BASE = Path(__file__).resolve().parents[1]
-INDICE = BASE / 'rag/indice_local'
-VERSION_INDICE = 2
-
 
 def indexar():
     modelo = os.getenv('RAG_EMBED_MODEL', 'embeddinggemma')
-    with conectar(admin=True) as con:
+    with conectar_admin() as con:
         filas = con.execute(f"""SELECT f.id, {DATOS_FRAGMENTO_SQL}
             FROM pims_riesgos.fragmentos f WHERE f.tipo='rag'
             AND (f.embedding IS NULL OR f.modelo_embedding IS DISTINCT FROM %s)
@@ -26,7 +20,7 @@ def indexar():
         vectores = generar_embeddings([datos['texto'] for _,datos in grupo])
         if len(vectores) != len(grupo):
             raise ValueError('Embeddings incompletos.')
-        with conectar(admin=True) as con:
+        with conectar_admin() as con:
             for (identificador,datos),vector in zip(grupo,vectores):
                 if not vector or any(not math.isfinite(v) for v in vector):
                     raise ValueError('Embedding inválido.')

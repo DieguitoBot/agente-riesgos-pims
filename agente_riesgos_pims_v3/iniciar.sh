@@ -7,8 +7,6 @@ if [[ ! -f .env ]]; then
 fi
 if [[ -x .venv/bin/python ]]; then
     interprete=.venv/bin/python
-elif [[ -x ../agente_riesgos_pims_v2/.venv/bin/python ]]; then
-    interprete=../agente_riesgos_pims_v2/.venv/bin/python
 else
     echo 'Crea el entorno virtual según README.md.'
     exit 1

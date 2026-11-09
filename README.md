@@ -1,119 +1,61 @@
-# Agente de evaluación de riesgos de privacidad
+# Agente PIMS V3 — Evaluación y gestión de riesgos de privacidad
 
-Proyecto académico PIMS: **escenario → evaluación → fuentes → medidas → reporte**.
-Flask presenta la interfaz; Python calcula la matriz y valida el análisis de
-Ollama. PostgreSQL almacena los documentos, fragmentos y embeddings del agente.
+**V3 es la única aplicación mantenida de este repositorio.** Incluye evaluación
+con Ollama local, recuperación documental desde PostgreSQL, planes de tratamiento,
+actividades, historial de cambios y exportación de reportes y CSV.
 
-## Probar Agente PIMS v3 con el equipo
-
-La rama `mejora/gestion-riesgos-v3` incluye PIMS v3 en otra
-carpeta, con historial, planes, actividades y descargas CSV. Sigue la
-[guía para clonar y probar la rama](docs/PROBAR_VERSION_V3.md).
-Incluye una demostración ficticia que funciona sin la base privada ni Ollama.
-
-## Ejecutar en este equipo
-
-Desde la raíz del repositorio:
+## Instalación nueva en Ubuntu
 
 ```bash
-cd agente_riesgos_pims_v2
-.venv/bin/python -m db.local iniciar
-bash iniciar.sh
-```
-
-Abre la dirección que muestra el lanzador, normalmente
-<http://127.0.0.1:8080>. Escoge `qwen3.5:4b-q4_K_M`, describe el caso y pulsa
-**Evaluar riesgo**. La generación puede tardar varios minutos según el equipo.
-Ollama debe estar iniciado: `ollama list` muestra los modelos instalados;
-si el servicio está detenido, ejecuta `ollama serve` en otra terminal.
-
-No necesitas volver a importar documentos ni generar embeddings para cada prueba.
-La aplicación carga `agente_riesgos_pims_v2/.env`; las variables ya definidas
-en la terminal tienen prioridad. No publiques ese archivo ni `.datos/`.
-
-## Visualizar la base de datos
-
-En otra terminal, desde `agente_riesgos_pims_v2/`:
-
-```bash
-bash abrir_pgadmin.sh
-```
-
-Abre <http://127.0.0.1:5050>. Despliega:
-
-**Agente de riesgos PIMS → PIMS - Riesgos (local) → Databases → pims_riesgos →
-Schemas → pims_riesgos → Tables**.
-
-Clic derecho en una tabla → **View/Edit Data → All Rows**.
-`documentos` contiene las fuentes; `fragmentos`, los extractos, su procedencia y
-embeddings; `controles_iso`, el catálogo disponible en la base actual.
-La evaluación automática utiliza un catálogo temático parcial de 13 controles;
-tener más controles almacenados no significa que se consulten todos.
-El inventario también está disponible en <http://127.0.0.1:8080/api/documentos>.
-
-## Instalación en otro equipo
-
-Requiere Python 3.10+, binarios de PostgreSQL y Ollama. Los lanzadores de
-PostgreSQL y pgAdmin incluidos están preparados para Linux y usan un clúster
-privado del proyecto; no configuran el servicio PostgreSQL del sistema.
-
-```bash
-cd agente_riesgos_pims_v2
+sudo apt install python3-venv postgresql
+cd agente_riesgos_pims_v3
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt -r requirements-rag.txt
-ollama pull qwen3.5:4b-q4_K_M
-ollama pull embeddinggemma
-.venv/bin/python -m db.local iniciar
-```
-
-Para una **base nueva vacía**, coloca la copia autorizada
-`ISO_IEC_27701_2025.md` junto al README raíz y conserva `Ley-29733.md` y
-`knowledge/documentos/`. Después importa y genera los embeddings:
-
-```bash
-.venv/bin/python -m db.migrar
-.venv/bin/python -m rag.indexar
+.venv/bin/python preparar_demo.py
 bash iniciar.sh
 ```
 
-`db.migrar` es el importador del formato histórico. No lo ejecutes sobre la base
-actual normalizada ni sobre documentos editados desde pgAdmin: requiere adaptar
-la escritura antes de reimportar en ese esquema. La lectura y la indexación
-admiten tanto el formato histórico JSON como las columnas de la base actual.
-Para trasladar la base actual a otro equipo, usa una copia de seguridad y su
-restauración. La instalación separada de pgAdmin está descrita en
-[db/OPERACION.txt](agente_riesgos_pims_v2/db/OPERACION.txt).
+Abre http://127.0.0.1:8180 (el lanzador indica otro puerto si está ocupado).
+La preparación inicial genera una base privada, credenciales locales y un caso
+**ficticio sin IA**. No reemplaza un `.env` existente. El corpus inicial está vacío:
+ver [la guía V3](agente_riesgos_pims_v3/README.md) para cargar las fuentes autorizadas.
 
-La copia ISO no se distribuye en Git. Una vez importadas las fuentes, la
-aplicación consulta PostgreSQL y no necesita leer los PDF o Markdown para evaluar.
-FAISS se conserva únicamente para herramientas y pruebas del índice histórico.
+## Si ya usabas V3
 
-## Pruebas y demostración
+Conserva `agente_riesgos_pims_v3/.env`, su carpeta `datos/` y el clúster que
+indica el DSN. Usa un entorno propio de V3. **No ejecutes una preparación nueva**.
+Los nombres internos `pims_riesgos_experimental`, `pims_experimental_app` y
+`gestitel_experimental` permanecen por compatibilidad con tus evaluaciones y planes.
+El servidor se inicia con `bash iniciar.sh` desde la carpeta V3.
 
-Desde `agente_riesgos_pims_v2/`:
+Si tus datos viven en el clúster privado de la raíz `.datos/`, debes mantenerlo:
+la limpieza del código no elimina ni migra automáticamente tus bases locales.
+Consulta [operación y migración](docs/OPERACION_V3.md) antes de actualizar.
+
+## API e integración
+
+- `POST /api/evaluar`: descripción, probabilidad e impacto (enteros 1–5), rol y modelo opcional.
+- `GET /api/status`: disponibilidad de Ollama.
+- `GET /api/documentos`: inventario PostgreSQL.
+- `/api/experimento/evaluaciones` y `/api/experimento/planes/...`: historial y seguimiento.
+
+Se conservan estas rutas para no romper clientes existentes. El orquestador es
+un proyecto externo y debe configurar `RIESGOS_URL=http://127.0.0.1:8180`
+(o el puerto efectivamente anunciado). No está integrado automáticamente.
+
+## Verificación
+
+Desde `agente_riesgos_pims_v3`:
 
 ```bash
-PIMS_BUSQUEDA_SEMANTICA=0 .venv/bin/python -m unittest discover -s tests -v
-PIMS_TEST_LECTURA=1 .venv/bin/python -m unittest tests.test_postgres_lectura -v
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m unittest tests_experimento -v
+PIMS_TEST_EXPERIMENTO=1 .venv/bin/python -m unittest tests_experimento -v
 node --check static/js/app.js
-.venv/bin/python -u comprobar_ia.py --entrada ejemplo_calidad_rag.json
+node --check static/js/experimento.js
 ```
 
-Las primeras pruebas usan IA simulada. Las pruebas de lectura consultan
-PostgreSQL sin modificar el corpus. El último comando usa Ollama real y guarda
-`reporte_ia.txt` solo si la respuesta supera la validación.
-
-La matriz es una convención académica del proyecto. Las citas verificadas
-acreditan procedencia textual; el análisis y las medidas requieren revisión.
-La herramienta no certifica cumplimiento, no ejecuta las medidas y no guarda un
-historial de evaluaciones: descarga el reporte antes de recargar la página.
-
-- [Guía para probar y explicar el agente](docs/GUIA_DEMOSTRACION.md).
-- [Qué aporta la base de referencia de Gestitel](docs/REFERENCIA_GESTITEL.md).
-- [Documentación funcional y API](agente_riesgos_pims_v2/README.md).
-- [Operación de PostgreSQL y pgAdmin](agente_riesgos_pims_v2/db/OPERACION.txt).
-- [Proceso de evaluación](agente_riesgos_pims_v2/PROMPT_SKILL.md).
-- [Acuerdos para contribuir](CONTRIBUTING.md).
-
-Cada integrante ejecuta Flask, PostgreSQL y Ollama en su equipo. Subir el código
-a GitHub no publica la aplicación ni incluye la base local.
+Las pruebas SQL requieren una base V3 preparada y revierten sus registros sintéticos.
+El núcleo IA requiere Ollama y documentos autorizados. No se incluyen normativa
+privada, bases de datos, credenciales ni modelos. Ningún resultado certifica
+cumplimiento normativo; las decisiones requieren revisión humana.
