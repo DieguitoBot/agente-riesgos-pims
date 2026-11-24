@@ -12,6 +12,7 @@ from knowledge.controles_iso import CONTROLES
 from db.repositorio import inventario, BaseNoDisponible
 from llm.ollama_client import consultar_estado
 from skills.evaluacion_riesgo import evaluar_riesgo
+from seguridad_documental import acceso_documental
 
 app = Flask(__name__)
 # El lanzador local no usa debug: recargar HTML editado sin retener plantillas antiguas.
@@ -30,6 +31,7 @@ def inicio():
 
 
 @app.get('/api/documentos')
+@acceso_documental
 def api_documentos():
     try:
         return jsonify(almacenamiento='PostgreSQL', documentos=inventario())
@@ -38,6 +40,7 @@ def api_documentos():
 
 
 @app.get('/api/fuente-rag/<huella>/<int:fragmento>')
+@acceso_documental
 def fuente_rag(huella, fragmento):
     if not re.fullmatch(r'[0-9a-f]{64}', huella):
         return jsonify(error='Huella inválida.'), 404
@@ -86,6 +89,7 @@ def api_evaluar():
 
 
 @app.get('/api/fuente-iso/<codigo>')
+@acceso_documental
 def fuente_iso(codigo):
     control = CONTROLES.get(codigo)
     if not control and not re.fullmatch(r'(?:4\.3|6\.1\.[23]|8\.[23]|[AB]\.[123](?:\.\d+){0,2})',codigo):
@@ -100,6 +104,8 @@ def fuente_iso(codigo):
         else:
             secciones, huella = leer_secciones()
             fragmento = secciones.get(seccion)
+    except BaseNoDisponible:
+        return jsonify(error='Base documental no disponible.'), 503
     except (OSError, UnicodeError, StopIteration):
         fragmento = None
     if not fragmento:

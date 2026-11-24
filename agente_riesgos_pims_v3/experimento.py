@@ -1,4 +1,5 @@
 """Persistencia de PIMS v3: resultados originales y planes editables separados."""
+from mantenimiento.metricas import medir
 import csv
 from datetime import date, datetime
 import io
@@ -50,6 +51,7 @@ def referencias_riesgo(resultado, riesgo):
     return refs
 
 
+@medir('persistencia')
 def guardar_evaluacion(resultado, duracion=0, procedencia='ollama_experimental'):
     if not resultado.get('reporte_ia_generado') and procedencia != 'demostracion':
         raise ValueError('Solo se guardan evaluaciones de IA válidas.')
@@ -262,6 +264,7 @@ def reporte_experimental(evaluacion):
     return '\n'.join(partes)+'\n'
 
 
+@medir('reporte.csv')
 def exportar_csv(evaluacion):
     salida = io.StringIO(newline='')
     escritor = csv.writer(salida)

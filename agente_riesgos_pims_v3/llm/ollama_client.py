@@ -1,4 +1,5 @@
 """Cliente HTTP de Ollama. No instala, descarga ni ejecuta modelos."""
+from mantenimiento.metricas import medir
 import json
 import logging
 
@@ -22,6 +23,7 @@ def _configuracion(modelo=None):
         raise OllamaError(str(exc)) from exc
 
 
+@medir('ollama.http')
 def _solicitar(metodo, ruta, config, **kwargs):
     try:
         with requests.Session() as session:
@@ -105,6 +107,7 @@ def recuperar_analisis(texto):
     return validar_analisis(datos)
 
 
+@medir('validacion.vinculos')
 def validar_vinculos_documentales(analisis, contexto):
     """Pide reparación antes de que el reporte pierda citas inválidas al filtrarse."""
     riesgos = {r['riesgo'] for r in analisis['riesgos_identificados']}
@@ -134,6 +137,7 @@ def validar_vinculos_documentales(analisis, contexto):
                                   "del riesgo y evidencia literal del escenario; omítela si no aplica.")
 
 
+@medir('ollama.total')
 def analizar_con_ollama(contexto):
     config = _configuracion(contexto.get('modelo_solicitado'))
     mensajes = construir_mensajes(contexto)

@@ -1,4 +1,5 @@
 """Recuperación de artículos del Markdown aportado; soporte para riesgos, no dictamen legal."""
+from mantenimiento.metricas import medir
 import hashlib
 import re
 from pathlib import Path
@@ -45,6 +46,7 @@ def leer_articulos(ruta=None):
     return articulos, hashlib.sha256(texto.encode()).hexdigest()
 
 
+@medir('contexto.ley')
 def recuperar_contexto_legal(descripcion):
     try:
         articulos, huella = leer_articulos()
@@ -64,6 +66,7 @@ def recuperar_contexto_legal(descripcion):
                 fragmentos=fragmentos, sha256=huella, mensaje=AVISO)
 
 
+@medir('validacion.ley')
 def validar_referencias(analisis, contexto, disponible):
     referencias, avisos = [], []
     fragmentos = {f['articulo']: f for f in contexto.get('contexto_legal', {}).get('fragmentos', [])}

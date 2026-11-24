@@ -1,4 +1,5 @@
 """Recuperación local por temas; conserva trazabilidad del Markdown OCR del usuario."""
+from mantenimiento.metricas import medir
 import hashlib
 import re
 import unicodedata
@@ -95,6 +96,7 @@ def leer_secciones(ruta=None):
     return secciones, huella
 
 
+@medir('contexto.iso')
 def recuperar_contexto(descripcion, rol):
     try:
         secciones, huella = leer_secciones()

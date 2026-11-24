@@ -1,4 +1,5 @@
 """Reporte exportable del análisis validado; no necesita otra llamada al modelo."""
+from mantenimiento.metricas import medir
 from datetime import datetime, timezone
 
 
@@ -175,6 +176,7 @@ def preparar_reporte(r):
         riesgos=r.get('analisis_ia',{}).get('riesgos_identificados',[]))
 
 
+@medir('reporte.txt')
 def generar_reporte(r):
     datos=preparar_reporte(r)
     partes=['UNIVERSIDAD NACIONAL DE SAN AGUSTÍN DE AREQUIPA',

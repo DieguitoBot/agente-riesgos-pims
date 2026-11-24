@@ -59,3 +59,25 @@ Las pruebas SQL requieren una base V3 preparada y revierten sus registros sinté
 El núcleo IA requiere Ollama y documentos autorizados. No se incluyen normativa
 privada, bases de datos, credenciales ni modelos. Ningún resultado certifica
 cumplimiento normativo; las decisiones requieren revisión humana.
+
+## Mantenimiento final V3
+
+El expediente y los reportes se incorporaron a `main` en `53a886b` (PR #8).
+Los informes de validación anteriores conservan sus resultados históricos.
+Consultar [el mantenimiento final](docs/MANTENIMIENTO_FINAL_PIMS_V3.md) para
+las correcciones, mediciones y verificaciones de esta fase.
+
+Las rutas de fuentes `/api/documentos`, `/api/fuente-rag/...` y
+`/api/fuente-iso/...` permiten consulta local por defecto. El acceso remoto requiere
+`PIMS_DOCUMENTOS_TOKEN` por cabecera Bearer. Los enlaces de cotejo siguen
+funcionando en la interfaz local. Ver configuración y límites en la guía V3.
+La evaluación y el historial también contienen extractos: el agente debe seguir
+escuchando en loopback; una publicación en red requiere control de acceso global
+en el despliegue. El control documental no convierte toda la API en un servicio público.
+
+GitHub Actions ejecuta sintaxis y pruebas sin servicios reales. Para reproducirlo:
+
+```bash
+cd agente_riesgos_pims_v3
+.venv/bin/python tests/run_unitarias.py
+```

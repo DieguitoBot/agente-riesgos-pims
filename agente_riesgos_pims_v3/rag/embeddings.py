@@ -1,4 +1,5 @@
 """Embeddings locales mediante Ollama. Instalar modelo con ollama pull embeddinggemma."""
+from mantenimiento.metricas import medir
 import os
 import requests
 
@@ -22,5 +23,6 @@ def generar_embeddings(textos, consulta=False):
     return vectors
 
 
+@medir('rag.embedding_consulta')
 def generar_embedding(texto):
     return generar_embeddings([texto], consulta=True)[0]

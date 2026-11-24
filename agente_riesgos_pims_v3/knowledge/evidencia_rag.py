@@ -1,10 +1,12 @@
 """Valida procedencia literal; la relación semántica sigue requiriendo revisión."""
 
+from mantenimiento.metricas import medir
 
 def normalizar(texto):
     return " ".join(texto.split())
 
 
+@medir('validacion.rag')
 def validar_citas_rag(analisis, contexto):
     fuentes = {f['id']: f for f in contexto.get('contexto_rag', {}).get('fragmentos', [])}
     riesgos = {r['riesgo'] for r in analisis['riesgos_identificados']}
