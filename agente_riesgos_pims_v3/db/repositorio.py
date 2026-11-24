@@ -1,4 +1,5 @@
 """Lectura PostgreSQL; no usa archivos documentales como respaldo implícito."""
+from mantenimiento.metricas import medir
 import os
 from pathlib import Path
 from contextlib import contextmanager
@@ -46,6 +47,7 @@ def conectar(admin=False):
         raise BaseNoDisponible('No se pudo acceder a PostgreSQL del agente de riesgos.') from exc
 
 
+@medir('postgresql.leer_norma')
 def leer_norma(tipo):
     with conectar() as con:
         filas = con.execute(f'''SELECT f.codigo, {DATOS_FRAGMENTO_SQL}, d.sha256
@@ -56,6 +58,7 @@ def leer_norma(tipo):
     return {codigo: datos for codigo, datos, _ in filas}, filas[0][2]
 
 
+@medir('postgresql.leer_fragmentos')
 def leer_fragmentos():
     with conectar() as con:
         return [fila[0] for fila in con.execute(f"""
@@ -64,6 +67,7 @@ def leer_fragmentos():
             WHERE f.tipo='rag' ORDER BY f.id""").fetchall()]
 
 
+@medir('postgresql.inventario')
 def inventario():
     with conectar() as con:
         return [dict(clave=c, categoria=t, sha256=h, fragmentos=n, metadatos=m,
@@ -75,6 +79,7 @@ def inventario():
             GROUP BY d.id ORDER BY d.categoria,d.clave''').fetchall()]
 
 
+@medir('postgresql.leer_fuente_rag')
 def leer_fuente_rag(huella, codigo):
     with conectar() as con:
         fila = con.execute(f'''SELECT {DATOS_CON_FUENTE_SQL}
@@ -87,6 +92,7 @@ def leer_fuente_rag(huella, codigo):
     return fila[0] if fila else None
 
 
+@medir('postgresql.leer_soa')
 def leer_soa():
     with conectar() as con:
         fila=con.execute("""SELECT metadatos->'controles_soa',metadatos->>'version',sha256
@@ -94,6 +100,7 @@ def leer_soa():
     return dict(controles=fila[0] or [],version=fila[1],sha256=fila[2]) if fila else dict(controles=[],version=None,sha256=None)
 
 
+@medir('postgresql.leer_seccion_iso')
 def leer_seccion_iso(codigo, huella):
     with conectar() as con:
         fila=con.execute("""SELECT f.datos FROM pims_riesgos.fragmentos f
@@ -106,6 +113,7 @@ def leer_seccion_iso(codigo, huella):
     return fila[0] if fila else None
 
 
+@medir('postgresql.leer_vectores')
 def leer_vectores(modelo):
     with conectar() as con:
         return con.execute(f"""SELECT {DATOS_CON_FUENTE_SQL}, f.embedding

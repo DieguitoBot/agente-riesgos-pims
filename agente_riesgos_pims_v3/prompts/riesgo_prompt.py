@@ -1,4 +1,5 @@
 """Contrato estructurado de la opinión complementaria del agente de riesgos."""
+from mantenimiento.metricas import medir
 import json
 import re
 from copy import deepcopy
@@ -197,6 +198,7 @@ def construir_esquema(contexto):
     return esquema
 
 
+@medir('contexto.mensajes')
 def construir_mensajes(contexto):
     catalogo = catalogo_para_rol(contexto.get('rol_privacidad', 'no_definido'))
     disponibles = {f['control'] for f in contexto.get('contexto_documental', {}).get('fragmentos', [])}

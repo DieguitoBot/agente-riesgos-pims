@@ -1,5 +1,14 @@
 # Validación final de consolidación PIMS V3 — 23/11/2026
 
+> Actualización de mantenimiento (24/11/2026): el estado «sin commits, push ni merge»
+> describe únicamente el cierre de la validación anterior. El avance se guardó en
+> `8f9dc59` y se incorporó a `main` mediante `53a886b` (PR #8).
+> Esta fase parte de `53a886b` en `mantenimiento/ajustes-finales-pims-v3`,
+> dentro de un worktree separado para preservar cambios locales pendientes.
+> No se han publicado los cambios de mantenimiento. Los resultados históricos
+> de este informe se conservan; véase [mantenimiento final](MANTENIMIENTO_FINAL_PIMS_V3.md).
+
+
 **Implementación académica simulada. Sin aprobación institucional de la UNSA.**
 La integración y los cotejos técnicos fueron ejecutados; no certifican cumplimiento,
 implementación operativa ni corrección semántica completa de las inferencias del LLM.
@@ -7,7 +16,7 @@ implementación operativa ni corrección semántica completa de las inferencias 
 ## 1. Alcance y estado previo
 
 Rama: `trabajo/expediente-privacidad-unsa`. HEAD conservado:
-`2ad8ad8316f62086d343a28329e5f9bc05e5e8d4`. Sin commits, push ni merge.
+`2ad8ad8316f62086d343a28329e5f9bc05e5e8d4`. En ese momento todavía no se habían realizado commits, push ni merge.
 Se conservaron las modificaciones previas y la arquitectura V3. La auditoría inicial
 confirmó 28 documentos, 2.114 fragmentos, 2.074 vectores, 23 evaluaciones y ninguna
 ISO registrada. El archivo privado recién aportado sí existía en la raíz; su hash

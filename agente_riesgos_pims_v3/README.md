@@ -35,8 +35,8 @@ incluidas sus tablas; no necesitan conversión ni nuevas dependencias. El cargad
 extrae el código del contenido y comprueba su correspondencia con el archivo.
 Registra título, versión, fecha, responsable propuesto, aprobación declarada,
 referencias y relaciones TRA/ACT/RIE/ACC. Se importan como documentos del proyecto
-académico, separados de las fuentes institucionales. Los TXT de instrucciones
-del paquete quedan fuera del RAG.
+académico, separados de las fuentes institucionales. El expediente versionado contiene solo los diez DOCX. La ingesta mantiene
+además la exclusión defensiva de archivos auxiliares que no sean DOCX en esa carpeta.
 
 ```bash
 .venv/bin/python -m db.migrar --simular  # extracción y metadatos, sin SQL
@@ -176,3 +176,51 @@ pims_riesgos_experimental → Schemas → pims_riesgos → Tables**. Sobre
 `fragmentos` contiene los fragmentos RAG; `versiones_documentales`, el historial
 documental. Las evaluaciones y planes están en el esquema
 `gestitel_experimental`. Cierra el visor con `Ctrl+C` en su terminal.
+
+### Mantenimiento y acceso a fuentes
+
+El expediente de esta guía ya se incorporó a `main` en `53a886b` (PR #8).
+Los resultados históricos no equivalen a nuevas ejecuciones; consultar
+[el informe de mantenimiento](../docs/MANTENIMIENTO_FINAL_PIMS_V3.md).
+
+`/api/documentos`, `/api/fuente-rag/<huella>/<fragmento>` y
+`/api/fuente-iso/<codigo>` exigen una de estas condiciones:
+
+- Conexión directa desde loopback y Host local (`localhost`, `127.0.0.1` o `::1`),
+  sin cabeceras de intermediación ni Origin distinto al del agente. Es el uso
+  habitual de la interfaz y de los enlaces de cotejo, sin autenticación adicional.
+- Cabecera `Authorization: Bearer <secreto>` que coincida con
+  `PIMS_DOCUMENTOS_TOKEN`, configurado fuera de Git. Un token vacío no habilita
+  consultas remotas. No se aceptan credenciales en la URL. Usar HTTPS o un túnel
+  de confianza para transportar el token fuera del equipo.
+
+Las respuestas documentales usan `Cache-Control: no-store, private`,
+`nosniff` y `Referrer-Policy: no-referrer`. Los fallos SQL devuelven un error
+genérico. No se confía en `X-Forwarded-For` para conceder acceso local.
+Si se instala un proxy, configurar `PIMS_DOCUMENTOS_LOCAL=0` y autenticar todas
+las consultas documentales, incluso si el proxy conecta por loopback. Un proxy
+que elimine las cabeceras de intermediación requiere esta configuración explícita.
+No introducir el secreto en JavaScript ni en enlaces de reportes.
+
+Estos controles protegen las consultas de fuentes; `/api/evaluar` y el historial
+conservan su contrato y pueden incluir extractos. Mantener el lanzador en loopback.
+Para publicar el servicio en red se necesita autenticación y autorización globales
+en el despliegue. No se añadió un sistema de usuarios ni se modificó el orquestador.
+
+Para pruebas deterministas, sin conexiones HTTP/SQL reales incluso con `.env`:
+
+```bash
+.venv/bin/python tests/run_unitarias.py
+```
+
+Para medir una evaluación real con datos ficticios, configuración local existente
+y persistencia habitual (crea un registro en el historial):
+
+```bash
+.venv/bin/python -m mantenimiento.medir_evaluacion
+```
+
+Emite tiempos por etapa y estados de exportación, sin imprimir normativa ni
+credenciales. Las etapas padre contienen a las hijas: no sumar tiempos solapados.
+Sin captura explícita, los decoradores no cronometran ni añaden campos a la API.
+El modelo, contexto, selección de fuentes, bandas de riesgo y reportes se conservan.

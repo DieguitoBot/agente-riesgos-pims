@@ -1,0 +1,32 @@
+name: Pruebas PIMS V3
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unitarias:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: agente_riesgos_pims_v3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: |
+            agente_riesgos_pims_v3/requirements.txt
+            agente_riesgos_pims_v3/requirements-rag.txt
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt -r requirements-rag.txt
+      - name: Comprobar sintaxis Python
+        run: python -m compileall -q -x '(^|/)(\.venv|datos)/' .
+      - name: Pruebas sin PostgreSQL ni Ollama reales
+        run: python tests/run_unitarias.py

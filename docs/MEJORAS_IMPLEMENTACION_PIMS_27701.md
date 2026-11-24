@@ -1,5 +1,14 @@
 # Mejoras de implementación PIMS ISO/IEC 27701:2025 — tercera entrega
 
+> Actualización de mantenimiento (24/11/2026): el estado «sin commits, push ni merge»
+> describe únicamente el cierre de la validación anterior. El avance se guardó en
+> `8f9dc59` y se incorporó a `main` mediante `53a886b` (PR #8).
+> Esta fase parte de `53a886b` en `mantenimiento/ajustes-finales-pims-v3`,
+> dentro de un worktree separado para preservar cambios locales pendientes.
+> No se han publicado los cambios de mantenimiento. Los resultados históricos
+> de este informe se conservan; véase [mantenimiento final](MANTENIMIENTO_FINAL_PIMS_V3.md).
+
+
 ## 1. Introducción
 
 El Agente PIMS V3 apoya una simulación académica en matrícula, bienestar y biblioteca
@@ -212,5 +221,6 @@ no está demostrada. La tercera entrega debe presentarse como simulación acadé
 con decisiones y validaciones humanas pendientes.
 
 Para reproducir comandos, versiones, casos y resultados completos, consultar
-[la validación documental](VALIDACION_DOCUMENTAL_PIMS_27701.md). No se hicieron
-commits, push, merge ni cambios en `main`.
+[la validación documental](VALIDACION_DOCUMENTAL_PIMS_27701.md). Al cierre de aquella
+validación no se habían hecho commits, push, merge ni cambios en `main`; el estado
+posterior se aclara al inicio de este informe.

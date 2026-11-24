@@ -1,3 +1,4 @@
+from mantenimiento.metricas import medir
 import unicodedata
 import re
 import uuid
@@ -188,6 +189,7 @@ def _validar_entradas(descripcion, probabilidad, impacto, categorias):
     return descripcion.strip(), [c.strip() for c in categorias]
 
 
+@medir('evaluacion.total')
 def evaluar_riesgo(descripcion, probabilidad, impacto, categorias=None, rol_privacidad="no_definido", modelo=None):
     """Skill híbrida: Python fija las cifras; Ollama analiza o se usan reglas.
 
@@ -310,6 +312,7 @@ def evaluar_riesgo(descripcion, probabilidad, impacto, categorias=None, rol_priv
     return resultado
 
 
+@medir('validacion.complementos')
 def _complementar(analisis, contexto, disponible):
     """Calcula la comparación y verifica referencias contra catálogo y escenario."""
     opinion = analisis.get('opinion_llm') if disponible else None

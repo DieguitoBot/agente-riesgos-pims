@@ -1,4 +1,5 @@
 """Recuperación híbrida: semántica y términos, con contexto y diversidad de fuentes."""
+from mantenimiento.metricas import medir
 from collections import Counter
 import math
 import os
@@ -83,6 +84,7 @@ def filtrar_alcance_pims(consulta, fragmentos):
     return [f for f in fragmentos if compatible(f)]
 
 
+@medir('rag.seleccion')
 def seleccionar(consulta, fragmentos, semanticos, k, incluir_metodologia=False):
     if k <= 0:
         return []
@@ -136,6 +138,7 @@ def seleccionar(consulta, fragmentos, semanticos, k, incluir_metodologia=False):
             for n, (i, _) in enumerate(elegidos, 1)]
 
 
+@medir('rag.total')
 def recuperar_contexto_rag(consulta, k=12, incluir_metodologia=False):
     from db.repositorio import leer_fragmentos, BaseNoDisponible
     try:
