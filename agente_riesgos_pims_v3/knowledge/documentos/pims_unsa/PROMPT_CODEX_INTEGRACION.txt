@@ -1,0 +1,22 @@
+CODEx: Integración documental del PIMS simulado — Agente de Riesgos V3
+
+Inspecciona primero git status, la rama activa, el README y agente_riesgos_pims_v3. NO modifiques datos ni código hasta conocer su arquitectura. NO cambies a main ni fuerces git pull; respeta archivos locales y evita commits sin revisión.
+
+En insumos_docente/documentos_simulados/ habrá 10 archivos DOCX originales del PIMS simulado ISO/IEC 27701:2025. Analízalos; preserva sus códigos, casos, supuestos y estados. También puede haber plantillas ISO 27001:2013 de terceros en insumos_docente/plantillas_27001/: NO las subas ni copies texto protegido. Todo insumos_docente debe quedar fuera de Git por defecto.
+
+META: hacer que V3 importe, registre, recupere y cite efectivamente los documentos simulados en PostgreSQL/RAG y produzca informes con trazabilidad (PIMS-RIE-01/02/03/03A/04/05A/05B/06/07/21). 
+
+REGLAS:
+1. Conserva .env, bases y datos existentes; NO ejecutes preparar_demo ni recrees PG; antes de cualquier migración, explica y solicita aprobación si puede modificar datos existentes.
+2. La SoA adjunta es un EXTRACTO, no completa. No afirmes cobertura total ni cumplimiento. Identifica los controles todavía sin evaluar y documenta esa limitación.
+3. La escala acordada para esta simulación es P e I 1–5 con P×I. NO copiar la antigua suma 0–2. Valida umbrales contra motor real y tests; si discrepan, documenta el conflicto y modifica de forma coherente bajo una rama nueva.
+4. Importación: primero comprueba formatos permitidos y el flujo vigente db.migrar → rag.indexar. Convierte DOCX a formatos admitidos (ej. PDF) solo si es preciso; preserva tablas y añade metadatos de código, versión y origen. No asumas que copiar archivos equivale a importarlos.
+5. Cada riesgo RIE debe vincular TRA, ACT, ACC y controles, y distinguir inherente, residual previsto y residual confirmado.
+6. No inventes contenido normativo ni citas. Usa el texto autorizado de ISO/IEC 27701:2025 disponible LOCALMENTE; nunca publiques la norma completa. Si no está disponible, no declares referencias normativas verificadas y marca provisional.
+7. Registra fuente/documento, fragmento, versión, puntuación de recuperación, decisión de la IA y faltas de evidencia. Las decisiones humanas no se automatizan.
+8. Agrega tests con respuestas simuladas y al menos una prueba opcional de integración real PostgreSQL/Ollama; informa por separado qué ejecutaste realmente.
+9. Audita riesgos de publicación: .gitignore, tokens, carpetas de docente, PDFs licenciados y datos personales. No hagas push automáticamente.
+
+FASES: (a) diagnóstico y estado actual; (b) plan de ingesta; (c) cambios mínimos en código y fuentes; (d) pruebas y ejemplo de reporte con citas; (e) README con instrucciones exactas.
+
+IMPORTANTE: los documentos entregados son académicos y no demuestran implementación real ni autorización institucional. El informe debe indicarlo claramente.

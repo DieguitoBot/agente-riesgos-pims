@@ -313,3 +313,13 @@ input[type="search"]:focus-visible { outline: 3px solid #82aaff; outline-offset:
     .tabla-tratamiento tbody tr { grid-template-columns: minmax(0, 1fr); }
     .tabla-tratamiento tbody th, .tabla-tratamiento tbody td { padding: 16px; }
 }
+
+/* Identificación de entrega y lectura de evidencias */
+.ficha-documental{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 18px;padding:14px 16px;margin-bottom:20px;background:#f0f5fa;border:1px solid #d4e1eb;border-radius:8px;font-size:.85rem}
+.ficha-documental p{margin:0;overflow-wrap:anywhere}
+.detalle-riesgo p,.detalle-riesgo a,#justificacion{overflow-wrap:anywhere;line-height:1.65}
+.resultado[data-nivel="Crítico"] .puntaje{background:#871b31;color:#fff}
+.resultado[data-nivel="Alto"] .puntaje{background:#a43e00;color:#fff}
+.resultado[data-nivel="Medio"] .puntaje{background:#f4d780;color:#392a08}
+.resultado[data-nivel="Bajo"] .puntaje{background:#d4ebe1;color:#174d38}
+@media print{body{background:white}.contenedor{width:100%;margin:0}.navegacion,.acciones-cabecera,button,dialog{display:none!important}.panel{box-shadow:none;border:1px solid #bbb}h2,h3{break-after:avoid}.detalle-riesgo{break-inside:avoid}.ficha-documental{background:white}.tabla-contenedor{overflow:visible}}

@@ -19,7 +19,12 @@ def validar_citas_rag(analisis, contexto):
                 or not item.get('aplicacion', '').strip()):
             avisos.append('Se omitió una relación RAG sin cita literal, fuente recuperada o hecho del escenario.')
             continue
-        referencias.append(dict(item, cita=cita, archivo=f['archivo'], pagina=f['pagina'],
+        trazabilidad = {k: f[k] for k in ('codigo_documental', 'version', 'sha256', 'localizador',
+                        'seccion', 'simulado', 'aprobacion', 'relevancia', 'similitud', 'metodo',
+                        'categoria','tipo_fuente','estado_ocr','correccion_ocr') if k in f}
+        if f.get('sha256'):
+            trazabilidad['fuente'] = f"/api/fuente-rag/{f['sha256']}/{f['fragmento']}"
+        referencias.append(dict(item, **trazabilidad, cita=cita, archivo=f['archivo'], pagina=f['pagina'],
                                 fragmento=f['fragmento'],
                                 estado='Cita cotejada con el fragmento; aplicabilidad por revisar'))
     if fuentes and not referencias:

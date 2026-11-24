@@ -20,7 +20,7 @@ def binario(nombre):
 def habilitar_lectura(con):
     con.execute(sql.SQL('GRANT USAGE ON SCHEMA pims_riesgos TO {}').format(sql.Identifier(ROL)))
     con.execute(sql.SQL('GRANT SELECT ON ALL TABLES IN SCHEMA pims_riesgos TO {}').format(sql.Identifier(ROL)))
-    for tabla in ('documentos', 'fragmentos'):
+    for tabla in ('documentos', 'fragmentos', 'versiones_documentales'):
         if not con.execute('SELECT 1 FROM pg_policies WHERE schemaname=%s AND tablename=%s AND policyname=%s', ('pims_riesgos', tabla, 'lectura_v3')).fetchone():
             con.execute(sql.SQL('CREATE POLICY lectura_v3 ON pims_riesgos.{} FOR SELECT TO {} USING (true)').format(sql.Identifier(tabla), sql.Identifier(ROL)))
 

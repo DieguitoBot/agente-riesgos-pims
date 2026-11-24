@@ -1,4 +1,4 @@
-"""Catálogo parcial 2025: títulos resumidos, sin reproducir requisitos de la norma."""
+"""Catálogo 2025: 78 resúmenes propios; texto normativo privado en PostgreSQL."""
 FUENTE = 'https://www.bsigroup.com/siteassets/pdf/th-th/products-and-services/th-as-cross-lg-ict-dt-iso27701-mp-iso27701revisionwebinar-1125.pdf'
 # Código, tema resumido, rol, página del documento público BSI.
 _DATOS = [
@@ -16,9 +16,14 @@ _DATOS = [
     ('A.3.25', 'Registro de eventos', 'ambos', 32),
     ('A.3.26', 'Criptografía', 'ambos', 32),
 ]
+# Resúmenes propios ampliados; la fuente normativa privada se consulta en PostgreSQL.
+from knowledge.revision_soa import CATALOGO
+for codigo,nombre in CATALOGO.items():
+    if codigo not in {fila[0] for fila in _DATOS}:
+        _DATOS.append((codigo,nombre,'responsable' if codigo.startswith('A.1.') else 'encargado' if codigo.startswith('A.2.') else 'ambos',None))
 CONTROLES = {codigo: dict(codigo=codigo, nombre=nombre, rol=rol,
     norma='ISO/IEC 27701:2025', anexo='A', guia='B' + codigo[1:],
-    fuente=FUENTE + '#page=' + str(pagina)) for codigo, nombre, rol, pagina in _DATOS}
+    fuente='/api/fuente-iso/' + codigo) for codigo, nombre, rol, pagina in _DATOS}
 
 
 def catalogo_para_rol(rol):

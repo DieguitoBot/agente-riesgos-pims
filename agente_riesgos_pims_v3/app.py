@@ -1,4 +1,5 @@
 from hashlib import sha256
+import re
 from pathlib import Path
 import time
 
@@ -34,6 +35,20 @@ def api_documentos():
         return jsonify(almacenamiento='PostgreSQL', documentos=inventario())
     except BaseNoDisponible:
         return jsonify(error='Base documental no disponible.'), 503
+
+
+@app.get('/api/fuente-rag/<huella>/<int:fragmento>')
+def fuente_rag(huella, fragmento):
+    if not re.fullmatch(r'[0-9a-f]{64}', huella):
+        return jsonify(error='Huella inválida.'), 404
+    from db.repositorio import leer_fuente_rag
+    try:
+        fuente = leer_fuente_rag(huella, str(fragmento))
+    except BaseNoDisponible:
+        return jsonify(error='Base documental no disponible.'), 503
+    if not fuente:
+        return jsonify(error='Fuente o versión no disponible en el corpus vigente.'), 404
+    return jsonify(fuente=fuente, sha256=huella)
 
 
 @app.route("/api/status")
@@ -73,11 +88,18 @@ def api_evaluar():
 @app.get('/api/fuente-iso/<codigo>')
 def fuente_iso(codigo):
     control = CONTROLES.get(codigo)
-    if not control:
+    if not control and not re.fullmatch(r'(?:4\.3|6\.1\.[23]|8\.[23]|[AB]\.[123](?:\.\d+){0,2})',codigo):
         return jsonify(error='Control no incluido en el catálogo.'), 404
     try:
-        secciones, huella = leer_secciones()
-        fragmento = secciones.get(control['guia'])
+        seccion=control['guia'] if control else codigo
+        huella=request.args.get('sha256')
+        if huella:
+            if not re.fullmatch(r'[a-f0-9]{64}',huella):return jsonify(error='Huella inválida.'),400
+            from db.repositorio import leer_seccion_iso
+            fragmento=leer_seccion_iso(seccion,huella)
+        else:
+            secciones, huella = leer_secciones()
+            fragmento = secciones.get(seccion)
     except (OSError, UnicodeError, StopIteration):
         fragmento = None
     if not fragmento:
@@ -145,12 +167,19 @@ def editar_plan(plan_id):
 @app.get('/api/experimento/evaluaciones/<evaluacion>/reporte')
 def exportar_experimento(evaluacion):
     formato = request.args.get('formato', 'txt')
-    if formato not in ('txt', 'base', 'csv'):
+    if formato not in ('txt', 'base', 'csv', 'html'):
         return jsonify(error='Formato no admitido.'), 400
     try:
         detalle = gestion.obtener_evaluacion(evaluacion)
     except BaseNoDisponible:
         return jsonify(error='La base de PIMS v3 no está disponible.'), 503
+    if formato=='html':
+        from skills.reporte import preparar_reporte
+        resultado=dict(detalle['resultado'])
+        resultado.setdefault('evaluacion_id',detalle['id'])
+        resultado.setdefault('fecha_evaluacion',detalle['creado'])
+        return render_template('reporte.html',documento=preparar_reporte(resultado),
+                               resultado=resultado,planes=detalle['planes'])
     contenido = (gestion.exportar_csv(detalle) if formato == 'csv' else
                  detalle['reporte_base'] if formato == 'base' else gestion.reporte_experimental(detalle))
     extension = 'csv' if formato == 'csv' else 'txt'

@@ -35,7 +35,7 @@ async function cargarHistorial() {
                 fila.appendChild(celda);
             }
             const celda = document.createElement("td"); celda.dataset.label="Acción"; celda.setAttribute("role","cell");
-            const abrir = document.createElement("button"); abrir.type = "button"; abrir.textContent = "Abrir evaluación";
+            const abrir = document.createElement("button"); abrir.type = "button"; abrir.textContent = "Abrir evaluación"; abrir.dataset.evaluacionId = item.id;
             abrir.addEventListener("click", async () => {
                 abrir.disabled = true;
                 try {

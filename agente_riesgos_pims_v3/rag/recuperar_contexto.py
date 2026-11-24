@@ -26,7 +26,9 @@ def normalizar(texto):
 
 
 def terminos(texto):
-    return [t[:7] for t in re.findall(r"[a-z]+", normalizar(texto)) if len(t) > 2 and t not in VACIAS]
+    texto = normalizar(texto)
+    identificadores = re.findall(r'\b(?:pims-rie-\d{2}[ab]?|(?:tra|act|rie|acc)-\d{3})\b', texto)
+    return identificadores + [t[:7] for t in re.findall(r"[a-z]+", texto) if len(t) > 2 and t not in VACIAS]
 
 
 def ampliar_consulta(consulta):
@@ -55,7 +57,36 @@ def puntajes_lexicos(consulta, fragmentos):
     return salida
 
 
-def seleccionar(consulta, fragmentos, semanticos, k):
+def filtrar_alcance_pims(consulta, fragmentos):
+    """Evita mezclar filas de otros casos cuando el usuario declara IDs explícitos.
+
+    Las relaciones TRA/RIE/ACT se toman de las filas reales de la matriz, nunca
+    se deducen por coincidencia de sufijos ni se transfieren al escenario como hechos.
+    """
+    tratamientos = set(re.findall(r'\bTRA-\d{3}\b', consulta.upper()))
+    riesgos = set(re.findall(r'\bRIE-\d{3}\b', consulta.upper()))
+    activos = set(re.findall(r'\bACT-\d{3}\b', consulta.upper()))
+    for f in fragmentos:
+        if f.get('codigo_documental') == 'PIMS-RIE-02':
+            for rie, tra, act in re.findall(r'\b(RIE-\d{3})\s*\|\s*(TRA-\d{3})\s*\|\s*(ACT-\d{3})\b', f['texto']):
+                if tra in tratamientos:
+                    riesgos.add(rie)
+                    activos.add(act)
+    def compatible(f):
+        if not f.get('codigo_documental'):
+            return True
+        for prefijo, permitidos in (('TRA', tratamientos), ('RIE', riesgos), ('ACT', activos)):
+            declarados = set(re.findall(r'\b'+prefijo+r'-\d{3}\b', f['texto']))
+            if permitidos and declarados and not permitidos.intersection(declarados):
+                return False
+        return True
+    return [f for f in fragmentos if compatible(f)]
+
+
+def seleccionar(consulta, fragmentos, semanticos, k, incluir_metodologia=False):
+    if k <= 0:
+        return []
+    fragmentos = filtrar_alcance_pims(consulta, fragmentos)
     lexicos = puntajes_lexicos(consulta, fragmentos)
     def clave(f):
         return (f["archivo"], f["pagina"], f["fragmento"])
@@ -74,13 +105,23 @@ def seleccionar(consulta, fragmentos, semanticos, k):
                   + (1 / (20 + rangos_lex[i]) if i in rangos_lex else 0)
               for i in candidatos}
     orden = sorted(candidatos, key=lambda i: (-puntos[i], i))
+    metodologias = [i for i, f in enumerate(fragmentos)
+                   if incluir_metodologia and f.get('codigo_documental') == 'PIMS-RIE-01'
+                   and f.get('seccion', '').startswith('4.') and '1–5 Bajo' in f['texto']]
+    # La evaluación siempre necesita los criterios adoptados, aunque el escenario no diga «metodología».
+    fijado = max(metodologias, key=lambda i: len(fragmentos[i]['texto'])) if metodologias else None
+    normativo = next((i for i,f in enumerate(fragmentos) if incluir_metodologia and f.get('tipo_fuente')=='iso' and f.get('seccion')=='6.1.3'),None)
+    fijos = [i for i in (fijado,normativo) if i is not None]
+    if fijos:
+        orden = fijos + [i for i in orden if i not in fijos]
     elegidos, archivos = [], Counter()
     for i in orden:
         f = fragmentos[i]
-        if len(f["texto"]) < 180 or archivos[f["archivo"]] >= 2:
+        minimo = 20 if f.get('codigo_documental') else 180
+        if len(f["texto"]) < minimo or archivos[f["archivo"]] >= 2:
             continue
         # No completar la cuota con títulos o resultados sin señal suficiente.
-        if lexicos[i] < 1 and similitudes.get(i, 0) < .45:
+        if i not in fijos and lexicos[i] < 1 and similitudes.get(i, 0) < .45:
             continue
         palabras = set(terminos(f["texto"]))
         if any(len(palabras & prev) / max(1, len(palabras | prev)) > .8 for _, prev in elegidos):
@@ -90,11 +131,12 @@ def seleccionar(consulta, fragmentos, semanticos, k):
         if len(elegidos) == k:
             break
     return [dict(fragmentos[i], id=f"F{n}", similitud=similitudes.get(i),
-                 metodo="semántica + términos", relevancia=round(puntos[i], 4))
+                 metodo="semántica + términos", relevancia=round(puntos.get(i, 0), 4),
+                 seleccion='criterios metodológicos' if i == fijado else 'tratamiento normativo' if i == normativo else 'relevancia temática')
             for n, (i, _) in enumerate(elegidos, 1)]
 
 
-def recuperar_contexto_rag(consulta, k=12):
+def recuperar_contexto_rag(consulta, k=12, incluir_metodologia=False):
     from db.repositorio import leer_fragmentos, BaseNoDisponible
     try:
         fragmentos = leer_fragmentos()
@@ -122,7 +164,7 @@ def recuperar_contexto_rag(consulta, k=12):
                         metodo = 'semántica + términos sobre PostgreSQL'
                 except (RequestException, OSError, ValueError, RuntimeError):
                     metodo = 'términos BM25 sobre PostgreSQL (embeddings no disponibles)'
-        datos = seleccionar(ampliar_consulta(consulta), fragmentos, semanticos, k)
+        datos = seleccionar(ampliar_consulta(consulta), fragmentos, semanticos, k, incluir_metodologia)
         for dato in datos:
             dato['metodo'] = metodo
     except BaseNoDisponible:

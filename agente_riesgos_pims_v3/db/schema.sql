@@ -20,6 +20,20 @@ CREATE TABLE IF NOT EXISTS pims_riesgos.fragmentos (
     datos jsonb NOT NULL,
     UNIQUE(documento_id, tipo, codigo)
 );
+-- Identidad lógica del expediente académico, independiente del nombre de archivo.
+CREATE UNIQUE INDEX IF NOT EXISTS documentos_codigo_pims
+    ON pims_riesgos.documentos ((metadatos->>'codigo_documental'))
+    WHERE metadatos ? 'codigo_documental';
+CREATE TABLE IF NOT EXISTS pims_riesgos.versiones_documentales (
+    clave text NOT NULL,
+    sha256 text NOT NULL,
+    original bytea NOT NULL,
+    metadatos jsonb NOT NULL,
+    fragmentos jsonb NOT NULL,
+    archivado timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (clave, sha256)
+);
+ALTER TABLE pims_riesgos.versiones_documentales ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS fragmentos_tipo ON pims_riesgos.fragmentos(tipo);
 ALTER TABLE pims_riesgos.documentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pims_riesgos.fragmentos ENABLE ROW LEVEL SECURITY;

@@ -8,6 +8,20 @@ from tests.test_ollama_client import ANALISIS
 
 
 class TestRevisionContenido(unittest.TestCase):
+    def test_carencia_no_declarada_en_el_hecho_activa_revision(self):
+        analisis = copy.deepcopy(ANALISIS)
+        analisis['riesgos_identificados'][0].update(
+            riesgo='Falta de base jurídica clara', evidencia='Existen expedientes de bienestar de prueba.',
+            explicacion='Revisar la legitimación.', vulnerabilidad='Base por confirmar.')
+        self.assertTrue(any('no declara esa carencia' in a for a in revisar_contenido(analisis)))
+
+    def test_no_consta_no_acredita_ausencia_de_revision(self):
+        analisis = copy.deepcopy(ANALISIS)
+        analisis['riesgos_identificados'][0].update(
+            riesgo='Falta de revisión de permisos', evidencia='No consta revisión de permisos.',
+            explicacion='Es necesaria una revisión.', vulnerabilidad='Ausencia de revisión.')
+        self.assertTrue(any('control desconocido' in a for a in revisar_contenido(analisis)))
+
     def test_carencia_inferida_de_informacion_desconocida_se_advierte(self):
         analisis = copy.deepcopy(ANALISIS)
         analisis['riesgos_identificados'][0].update(

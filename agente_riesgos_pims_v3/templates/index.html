@@ -21,6 +21,7 @@
                 <p>Evalúa un tratamiento de datos personales y revisa sus riesgos y medidas propuestas.</p>
             </div>
             <button id="exportar-reporte" class="boton-secundario" type="button" disabled>↓ Descargar reporte (.txt)</button>
+            <a id="imprimir-reporte" class="enlace-boton" target="_blank" rel="noopener" hidden>Vista de impresión</a>
         </section>
 
         <section class="resumen" aria-label="Resumen de la evaluación actual" aria-live="polite">
@@ -118,6 +119,7 @@
                 <button type="button" data-ir-evaluacion>Ir a evaluación</button>
             </div>
         <section id="resultado" class="panel resultado oculto">
+            <div id="ficha-reporte" class="ficha-documental" aria-label="Identificación documental del reporte"></div>
             <div class="resultado-superior">
                 <div>
                     <p class="etiqueta">Tu valoración · matriz del proyecto</p>
@@ -153,7 +155,7 @@
             <div id="indicadores"></div>
 
             <h3>Posibles controles afectados · ISO/IEC 27701:2025</h3>
-            <p class="nota">Anexo A: controles de referencia. Anexo B: guía de implementación. Catálogo parcial; cada relación requiere verificar evidencia y aplicabilidad.</p>
+            <p class="nota">Anexo A: controles de referencia. Anexo B: orientaciones. El catálogo resume 78 controles; la selección es temática y cada relación requiere verificar evidencia, rol y decisión de la SoA.</p>
             <div id="referencias-iso"></div>
             <ul id="avisos-revision" class="nota"></ul>
 

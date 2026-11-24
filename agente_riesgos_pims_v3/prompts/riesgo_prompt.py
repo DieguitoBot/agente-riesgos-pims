@@ -58,6 +58,8 @@ evidencia NO es un nombre de archivo, página, control ni cita documental: copia
 de descripcion o hechos_citables. Los documentos solo sustentan las recomendaciones.
 Distingue: hecho declarado, inferencia de riesgo y dato por confirmar. Respeta controles existentes
 y negaciones: una copia diaria no demuestra ausencia de respaldos; exposición no implica filtración confirmada.
+«No consta revisión» significa evidencia no disponible, no ausencia confirmada del control.
+No conviertas ese dato desconocido en un riesgo adicional ni lo llames una vulnerabilidad confirmada.
 No clasifiques automáticamente DNI, correo o notas como datos legalmente sensibles. Describe el daño
 sin asignar una categoría jurídica no sustentada.
 No uses información de documentos como si describiera lo sucedido en el escenario.
@@ -106,6 +108,18 @@ enlaces revisados × 100; fuente: inventario de enlaces y pruebas sin sesión; m
 Nunca uses 'contexto de evaluación' como fuente de medición.
 
 SUSTENTO DOCUMENTAL
+contexto_soa contiene decisiones documentadas por control, no evidencias operativas.
+Respeta exclusiones, roles y decisiones pendientes; no selecciones un control solo por su nombre.
+Un control pendiente puede ser candidato motivado, nunca aplicable o implementado confirmado.
+Las fuentes ISO son OCR privado. Conserva los códigos recibidos y advierte los límites de OCR.
+Las fuentes PIMS-RIE son documentos académicos simulados sin aprobación institucional.
+Su SoA es parcial. Sus controles son propuestas pendientes de cotejo normativo, nunca controles implementados.
+Cuando se recuperen, usa PIMS-RIE-01 para metodología, 02 para riesgos, 03 para acciones,
+03A para residual previsto, 04 para controles propuestos, 05A/05B para activos y tratamientos,
+07 para alcance y 21 para decidir si corresponde ampliar la evaluación de impacto.
+Conserva los identificadores TRA, ACT, RIE y ACC solo cuando consten en las fuentes pertinentes.
+Los valores residuales de 03A son hipótesis sin aceptación; no los atribuyas al escenario real.
+Método Python: P × I; 1–5 Bajo, 6–11 Medio, 12–19 Alto, 20–25 Crítico.
 contexto_rag contiene fuentes F1, F2, etc. En referencias_rag vincula todas las fuentes pertinentes con un
 riesgo identificado: copia una cita literal de 20–240 caracteres y explica en aplicacion cómo
 orienta la medida concreta, qué límite tiene y qué debe confirmarse. Usa solamente IDs recibidos.
@@ -193,9 +207,12 @@ def construir_mensajes(contexto):
     for clave in ('contexto_documental', 'contexto_legal', 'contexto_rag'):
         datos[clave] = {'fragmentos': contexto.get(clave, {}).get('fragmentos', [])}
     datos['hechos_citables'] = hechos_citables(contexto.get('descripcion', ''))
+    datos['contexto_soa'] = contexto.get('soa', {})
     # El ordinal del fragmento y los puntajes de búsqueda no son páginas ni hechos.
     datos['contexto_rag']['fragmentos'] = [
-        {k: f[k] for k in ('id', 'archivo', 'pagina', 'texto') if k in f}
+        {k: f[k] for k in ('id', 'archivo', 'pagina', 'texto', 'codigo_documental', 'version',
+                           'seccion', 'simulado', 'aprobacion','categoria','estado_ocr','correccion_ocr',
+                           'control_soa','aplicabilidad_soa','estado_control') if k in f}
         for f in datos['contexto_rag']['fragmentos']]
     return [
         {'role': 'system', 'content': IDENTIDAD + '\nCatálogo ISO disponible:\n' + json.dumps(catalogo, ensure_ascii=False)},
