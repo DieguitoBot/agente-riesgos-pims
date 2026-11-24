@@ -26,6 +26,7 @@ form.addEventListener("submit", async (evento) => {
     cambiarPestana("evaluacion");
     ultimoResultado = null;
     document.getElementById("exportar-reporte").disabled = true;
+    document.getElementById("imprimir-reporte").hidden = true;
     resultado.classList.add("oculto");
     errorBox.classList.add("oculto");
 
@@ -106,15 +107,19 @@ function mostrarComplemento(contenido) {
     document.getElementById("estado-rag").textContent = contenido.estado_rag || "Estado de recuperación no informado.";
     mostrarTarjetas("aplicaciones-rag", contenido.referencias_rag || [],
         "El modelo no vinculó medidas con citas RAG verificables en esta evaluación.", (tarjeta, ref) => {
+            parrafo(tarjeta, `Categoría: ${ref.codigo_documental ? "Implementación PIMS" : ref.categoria || "No declarada"}`);
             parrafo(tarjeta, `${ref.fuente_id} · ${ref.riesgo}`);
             parrafo(tarjeta, `Hecho: ${ref.evidencia}`);
             parrafo(tarjeta, `Cita: “${ref.cita}”`);
             parrafo(tarjeta, `Aplicación propuesta: ${ref.aplicacion}`);
             parrafo(tarjeta, `${ref.archivo} · Página: ${ref.pagina ?? "No aplica"} · ${ref.estado}`);
+            mostrarProcedenciaPims(tarjeta, ref);
         });
     mostrarTarjetas("fuentes-rag", contenido.fuentes_rag || [],
         "Esta evaluación no incluye fuentes recuperadas por RAG.", (tarjeta, fuente) => {
+            parrafo(tarjeta, `Categoría: ${fuente.codigo_documental ? "Implementación PIMS" : fuente.categoria || "No declarada"}`);
             parrafo(tarjeta, `${fuente.id || ""} · ${fuente.archivo || "Documento sin nombre"}`);
+            if (fuente.estado_ocr) parrafo(tarjeta, `OCR: ${fuente.estado_ocr}. ${fuente.correccion_ocr || ""}`);
             if (fuente.texto) {
                 const detalle = document.createElement("details");
                 const titulo = document.createElement("summary");
@@ -124,6 +129,7 @@ function mostrarComplemento(contenido) {
                 tarjeta.appendChild(detalle);
             }
             parrafo(tarjeta, `Página: ${fuente.pagina ?? "No indicada"} · Fragmento: ${fuente.fragmento ?? "No indicado"}`);
+            mostrarProcedenciaPims(tarjeta, fuente);
         });
 
     const ia = contenido.valoracion_ia;
@@ -160,6 +166,10 @@ function mostrarComplemento(contenido) {
             if (item.archivo) parrafo(tarjeta, `Fuente: ${item.archivo} · página OCR ${item.pagina} · línea ${item.linea}`);
             parrafo(tarjeta, `Por verificar: ${item.evidencia_requerida}`);
             parrafo(tarjeta, `Rol: ${item.rol} · ${item.aplicabilidad}`);
+            if (item.decision_soa) {
+                parrafo(tarjeta, `SoA ${item.version_soa}: ${item.decision_soa}. Implementación: ${item.estado_implementacion}`);
+                parrafo(tarjeta, `Justificación documental: ${item.justificacion_soa}`);
+            }
             const enlace = document.createElement("a");
             enlace.href = item.fuente;
             enlace.textContent = "Ver fuente almacenada en PostgreSQL";
@@ -186,6 +196,20 @@ function mostrarComplemento(contenido) {
             tarjeta.appendChild(enlace);
         });
     llenarLista("avisos-revision", contenido.avisos_revision || []);
+}
+
+function mostrarProcedenciaPims(tarjeta, fuente) {
+    if (!fuente.codigo_documental) return;
+    parrafo(tarjeta, `${fuente.codigo_documental} · Versión ${fuente.version} · ${fuente.localizador}`);
+    parrafo(tarjeta, `SIMULACIÓN ACADÉMICA · ${fuente.aprobacion} · SHA256: ${fuente.sha256}`);
+    if (/^[a-f0-9]{64}$/.test(fuente.sha256) && Number.isInteger(fuente.fragmento)) {
+        const enlace = document.createElement("a");
+        enlace.href = `/api/fuente-rag/${fuente.sha256}/${fuente.fragmento}`;
+        enlace.target = "_blank";
+        enlace.rel = "noopener";
+        enlace.textContent = "Cotejar fragmento en PostgreSQL";
+        tarjeta.appendChild(enlace);
+    }
 }
 
 
@@ -389,6 +413,14 @@ function mostrarTratamiento() {
 document.getElementById("buscar-tratamiento").addEventListener("input", mostrarTratamiento);
 
 function presentarResultado(contenido) {
+    const ficha = document.getElementById("ficha-reporte");
+    ficha.replaceChildren();
+    for (const texto of [contenido.version_reporte || "Reporte histórico", `Evaluación: ${contenido.evaluacion_id || contenido.experimento_id || "No informada"}`,
+        `Fecha UTC: ${contenido.fecha_evaluacion || "Consultar historial"}`, `Estado: ${{requiere_revision_por_alertas:"Requiere revisión por alertas",pendiente_de_revision:"Pendiente de revisión humana",sin_analisis_ia:"Sin análisis de IA"}[contenido.estado_revision] || "Pendiente de revisión"}`]) parrafo(ficha, texto);
+    const imprimir = document.getElementById("imprimir-reporte");
+    imprimir.hidden = !contenido.experimento_id;
+    if (contenido.experimento_id) imprimir.href = `/api/experimento/evaluaciones/${encodeURIComponent(contenido.experimento_id)}/reporte?formato=html`;
+    resultado.dataset.nivel = contenido.nivel;
     document.getElementById("nivel").textContent = `Nivel ${contenido.nivel}`;
     document.getElementById("puntaje").textContent = `${contenido.puntaje}/25`;
     document.getElementById("justificacion").textContent = contenido.justificacion;

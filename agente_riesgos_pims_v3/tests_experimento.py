@@ -121,7 +121,7 @@ class TestAPIExperimental(unittest.TestCase):
 
     def test_id_invalido_y_formato_no_permitido(self):
         self.assertEqual(self.cliente.get('/api/experimento/evaluaciones/no-es-uuid').status_code,404)
-        self.assertEqual(self.cliente.get('/api/experimento/evaluaciones/no-es-uuid/reporte?formato=html').status_code,400)
+        self.assertEqual(self.cliente.get('/api/experimento/evaluaciones/no-es-uuid/reporte?formato=zip').status_code,400)
 
     def test_scripts_y_elementos_estan_sincronizados(self):
         import re

@@ -36,9 +36,32 @@ def leer_documentos(carpeta):
         return []
     salida = []
     for p in sorted(raiz.rglob("*")):
-        if not p.is_file() or p.is_symlink() or p.suffix.lower() not in (".pdf", ".txt", ".md"):
+        if (not p.is_file() or p.is_symlink() or not p.resolve().is_relative_to(raiz.resolve())
+                or p.suffix.lower() not in (".pdf", ".txt", ".md", ".docx")):
             continue
         nombre = str(p.relative_to(raiz))
+        if p.parent.name == 'pims_unsa' and p.suffix.lower() != '.docx':
+            continue  # Instrucciones de operación no son evidencia del PIMS.
+        if p.suffix.lower() == '.docx':
+            from knowledge.documento_pims import leer_docx
+            doc = leer_docx(p)
+            controles = {r['codigo']:r for r in doc['metadatos'].get('controles_soa',[])}
+            metadatos = {k:v for k,v in doc['metadatos'].items() if k != 'controles_soa'}
+            numero = 0
+            for bloque in doc['bloques']:
+                if bloque['seccion'] == 'Cabecera':
+                    continue
+                texto = (doc['metadatos']['codigo_documental'] + ' · ' + bloque['seccion'] + '\n'
+                         + (bloque['cabecera'] + '\n' if 'cabecera' in bloque else '') + bloque['texto'])
+                for parte, s in enumerate(dividir(texto), 1):
+                    numero += 1
+                    control = controles.get(bloque['texto'].split(' | ')[0])
+                    extra = dict(control_soa=control['codigo'],aplicabilidad_soa=control['aplicabilidad'],
+                                 estado_control=control['estado']) if control else {}
+                    salida.append(dict(metadatos, **extra, archivo=nombre, pagina=None,
+                                       fragmento=numero, texto=s, seccion=bloque['seccion'],
+                                       localizador=bloque['localizador'] + f'/parte/{parte}'))
+            continue
         if p.suffix.lower() == ".pdf":
             cache_ocr = p.parent.parent / ".ocr_cache" / f"{p.name}.json"
             if cache_ocr.exists():

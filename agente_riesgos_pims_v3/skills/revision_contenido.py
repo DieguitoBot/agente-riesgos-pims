@@ -15,8 +15,14 @@ def revisar_contenido(analisis):
     for nombre, riesgo in riesgos.items():
         explicacion = normalizar(riesgo.get('explicacion', ''))
         carencia = normalizar(nombre + ' ' + riesgo.get('vulnerabilidad', ''))
+        evidencia = normalizar(riesgo.get('evidencia', ''))
+        if (re.search(r'ausencia|falta de|incertidumbre', carencia)
+                and not re.search(r'\bsin\b|no tiene|no existe|carece|falta|ausencia|no se realiza|no esta|no consta|no se acredita', evidencia)):
+            avisos.append(f'Revisar inferencia de «{nombre}»: la evidencia literal no declara esa carencia. '
+                          'Confirmar el control o dato antes de tratarlo como un riesgo adicional.')
         if (re.search(r'ausencia|falta|sin ', carencia)
-                and re.search(r'no se menciona|no se ha confirmado (?:ninguna? )?(?:prueba|existencia|realizacion|disponibilidad)|falta de informacion|no se dispone de informacion', explicacion)):
+                and (re.search(r'no consta|no se acredita|no se ha confirmado', evidencia)
+                     or re.search(r'no se menciona|no se ha confirmado (?:ninguna? )?(?:prueba|existencia|realizacion|disponibilidad)|falta de informacion|no se dispone de informacion', explicacion))):
             avisos.append(f'Revisar sustento de «{nombre}»: la explicación menciona información no confirmada. '
                           'No confundir un control desconocido con un control ausente; trasladar lo desconocido a datos por confirmar.')
         if re.search(r'\bF\d+\b', riesgo.get('explicacion', '')):

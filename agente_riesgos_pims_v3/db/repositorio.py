@@ -17,6 +17,9 @@ DATOS_FRAGMENTO_SQL = """jsonb_build_object('pagina', NULL) || f.datos ||
         'id', 'documento_id', 'tipo', 'codigo', 'datos',
         'embedding', 'modelo_embedding', 'busqueda'
     ]::text[])"""
+DATOS_CON_FUENTE_SQL = """jsonb_build_object('sha256', d.sha256,
+    'categoria', d.categoria, 'version', d.metadatos->>'version',
+    'clave_documento', d.clave) || """ + DATOS_FRAGMENTO_SQL
 
 
 @contextmanager
@@ -56,21 +59,56 @@ def leer_norma(tipo):
 def leer_fragmentos():
     with conectar() as con:
         return [fila[0] for fila in con.execute(f"""
-            SELECT {DATOS_FRAGMENTO_SQL} FROM pims_riesgos.fragmentos f
+            SELECT {DATOS_CON_FUENTE_SQL} FROM pims_riesgos.fragmentos f
+            JOIN pims_riesgos.documentos d ON d.id=f.documento_id
             WHERE f.tipo='rag' ORDER BY f.id""").fetchall()]
 
 
 def inventario():
     with conectar() as con:
-        return [dict(clave=c, categoria=t, sha256=h, fragmentos=n) for c,t,h,n in con.execute('''
-            SELECT d.clave,d.categoria,d.sha256,count(f.id) FROM pims_riesgos.documentos d
+        return [dict(clave=c, categoria=t, sha256=h, fragmentos=n, metadatos=m,
+                     indexados=indexados) for c,t,h,n,m,indexados in con.execute('''
+            SELECT d.clave,d.categoria,d.sha256,count(f.id),d.metadatos,
+                count(f.id) FILTER (WHERE f.embedding IS NOT NULL)
+            FROM pims_riesgos.documentos d
             LEFT JOIN pims_riesgos.fragmentos f ON f.documento_id=d.id
             GROUP BY d.id ORDER BY d.categoria,d.clave''').fetchall()]
 
 
+def leer_fuente_rag(huella, codigo):
+    with conectar() as con:
+        fila = con.execute(f'''SELECT {DATOS_CON_FUENTE_SQL}
+            FROM pims_riesgos.fragmentos f JOIN pims_riesgos.documentos d ON d.id=f.documento_id
+            WHERE d.sha256=%s AND f.tipo='rag' AND f.codigo=%s''', (huella, codigo)).fetchone()
+        if not fila:
+            fila = con.execute('''SELECT f.datos FROM pims_riesgos.versiones_documentales v,
+                LATERAL jsonb_array_elements(v.fragmentos) AS f(datos)
+                WHERE v.sha256=%s AND f.datos->>'fragmento'=%s LIMIT 1''', (huella, codigo)).fetchone()
+    return fila[0] if fila else None
+
+
+def leer_soa():
+    with conectar() as con:
+        fila=con.execute("""SELECT metadatos->'controles_soa',metadatos->>'version',sha256
+            FROM pims_riesgos.documentos WHERE metadatos->>'codigo_documental'='PIMS-RIE-04'""").fetchone()
+    return dict(controles=fila[0] or [],version=fila[1],sha256=fila[2]) if fila else dict(controles=[],version=None,sha256=None)
+
+
+def leer_seccion_iso(codigo, huella):
+    with conectar() as con:
+        fila=con.execute("""SELECT f.datos FROM pims_riesgos.fragmentos f
+            JOIN pims_riesgos.documentos d ON d.id=f.documento_id
+            WHERE f.tipo='iso' AND f.codigo=%s AND d.sha256=%s""",(codigo,huella)).fetchone()
+        if not fila:
+            fila=con.execute("""SELECT f.datos FROM pims_riesgos.versiones_documentales v,
+                LATERAL jsonb_array_elements(v.fragmentos) f(datos)
+                WHERE v.sha256=%s AND f.datos->>'seccion'=%s AND NOT(f.datos ? 'fragmento') LIMIT 1""",(huella,codigo)).fetchone()
+    return fila[0] if fila else None
+
+
 def leer_vectores(modelo):
     with conectar() as con:
-        return con.execute(f"""SELECT {DATOS_FRAGMENTO_SQL}, f.embedding
-            FROM pims_riesgos.fragmentos f WHERE f.tipo='rag'
+        return con.execute(f"""SELECT {DATOS_CON_FUENTE_SQL}, f.embedding
+            FROM pims_riesgos.fragmentos f JOIN pims_riesgos.documentos d ON d.id=f.documento_id WHERE f.tipo='rag'
             AND f.modelo_embedding=%s AND f.embedding IS NOT NULL ORDER BY f.id""",
             (modelo,)).fetchall()

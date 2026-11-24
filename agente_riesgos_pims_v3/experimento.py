@@ -43,7 +43,9 @@ def referencias_riesgo(resultado, riesgo):
                                 ('referencias_rag','RAG','fuente_id')):
         for ref in resultado.get(campo, []):
             if ref['riesgo'] == riesgo:
-                refs.append({'tipo': tipo, 'codigo': ref[codigo], 'archivo': ref.get('archivo', ''),
+                refs.append({**{k: ref[k] for k in ('codigo_documental', 'version', 'sha256', 'localizador', 'fuente') if k in ref},
+                             'tipo': tipo, 'codigo': ref[codigo], 'archivo': ref.get('archivo', ''),
+                             'localizador': ref.get('localizador') or (f"página {ref.get('pagina')}, línea {ref.get('linea')}" if ref.get('linea') else 'No informado'),
                              'cita': ref.get('cita_normativa', ref.get('cita', ''))})
     return refs
 
@@ -51,7 +53,7 @@ def referencias_riesgo(resultado, riesgo):
 def guardar_evaluacion(resultado, duracion=0, procedencia='ollama_experimental'):
     if not resultado.get('reporte_ia_generado') and procedencia != 'demostracion':
         raise ValueError('Solo se guardan evaluaciones de IA válidas.')
-    evaluacion = uuid.uuid4()
+    evaluacion = uuid.UUID(resultado['evaluacion_id']) if resultado.get('evaluacion_id') else uuid.uuid4()
     with conectar() as con:
         con.execute('''INSERT INTO gestitel_experimental.evaluaciones
             (id,titulo,procedencia,duracion_segundos,resultado,reporte_base)
@@ -245,6 +247,11 @@ def reporte_experimental(evaluacion):
         partes.extend(['\n'+p['codigo']+' · '+p['riesgo'], 'Hecho: '+p['hecho'],
                        'Medida vigente del plan: '+p['medida'], 'Verificación: '+p['verificacion'],
                        'Área: '+(p['area'] or 'Por asignar'), 'Versión del plan: '+str(p['version'])])
+        for ref in evaluacion.get('resultado',{}).get('referencias_iso',[]):
+            if ref.get('riesgo')==p['riesgo'] and ref.get('decision_soa'):
+                partes.extend([f"Control {ref['codigo']} · SoA {ref.get('version_soa')} · {ref['decision_soa']}",
+                    'Implementación al evaluar: '+ref.get('estado_implementacion','No acreditada'),
+                    'Justificación documentada: '+ref.get('justificacion_soa','Por revisar')])
         partes.append('Fuentes cotejadas: '+('; '.join(x['tipo']+' '+x['codigo'] for x in p['referencias']) or 'Sin relación verificada'))
         for n,a in enumerate(p['actividades'],1):
             partes.append(f"Actividad {n}: {a['descripcion']} · Responsable: {a['responsable'] or 'Por asignar'} · Plazo: {a['fecha_fin'] or 'Por acordar'} · {'Completada' if a['completada'] else 'Pendiente'}")
@@ -260,11 +267,14 @@ def exportar_csv(evaluacion):
     escritor = csv.writer(salida)
     escritor.writerow(['Código','Riesgo','Hecho','Amenaza','Vulnerabilidad','Medida','Verificación',
                        'Prioridad','Fuentes cotejadas','Responsable','Área','Inicio','Plazo','Estado',
-                       'Actividades','Riesgo residual','Evidencia de verificación','Versión'])
+                       'Actividades','Riesgo residual','Evidencia de verificación','Versión',
+                       'Evaluación','Versión de reporte','Trazabilidad documental'])
     for p in evaluacion['planes']:
         valores = [p['codigo'],p['riesgo'],p['hecho'],p['amenaza'],p['vulnerabilidad'],p['medida'],
                    p['verificacion'],p['prioridad'],'; '.join(x['tipo']+' '+x['codigo'] for x in p['referencias']),
                    p['responsable'],p['area'],p['fecha_inicio'] or '',p['fecha_fin'] or '',p['estado'],
-                   '; '.join(a['descripcion'] for a in p['actividades']),residual(p),p['evidencia_verificacion'],p['version']]
+                   '; '.join(a['descripcion'] for a in p['actividades']),residual(p),p['evidencia_verificacion'],p['version'],
+                   evaluacion['id'],evaluacion.get('resultado',{}).get('version_reporte','Histórico'),
+                   '; '.join(' | '.join(str(x.get(k) or 'No declarado') for k in ('archivo','version','sha256','localizador')) for x in p['referencias'])]
         escritor.writerow(["'"+v if isinstance(v,str) and v.lstrip().startswith(('=','+','-','@','\t','\r')) else v for v in valores])
     return '\ufeff'+salida.getvalue()
